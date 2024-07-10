@@ -1,0 +1,5 @@
+env:
+  ansible_user: User
+  ansible_password: P@ssw0rd
+  ansible_connection: winrm
+  ansible_winrm_transport: basic

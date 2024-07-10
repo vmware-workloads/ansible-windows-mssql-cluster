@@ -1,0 +1,120 @@
+- name: Installing Choco & SQL Server
+  hosts: sql
+  become: true
+  become_user: Administrator
+  become_method: runas 
+
+  vars:
+    ansible_connection: ssh
+    ansible_shell_type: powershell
+    ansible_become_password: P@ssw0rd
+
+  tasks:
+
+    - name: Install Failover-Clustering with sub features and management tools
+      ansible.windows.win_feature:
+        name: Failover-Clustering
+        state: present
+        include_sub_features: true
+        include_management_tools: true
+
+    - name: Install Failover-Clustering with sub features and management tools
+      ansible.windows.win_feature:
+        name: Multipath-IO
+        state: present
+
+
+    - name: Reboot the machine with all defaults
+      ansible.windows.win_reboot: 
+
+    - name: Configure MultiPath IO
+      ansible.windows.win_shell: | 
+        Enable-MSDSMAutomaticClaim -BusType iSCSI
+        Set-MPIOSetting -CustomPathRecovery Enabled -NewPathRecoveryInterval 20 -NewRetryCount 60 -NewPDORemovePeriod 60 -NewPathVerificationPeriod 30 -NewDiskTimeout 60
+
+
+    - name: Ensure Chocolatey itself is installed, using community repo for the bootstrap
+      win_chocolatey:
+        name: chocolatey   
+    
+    
+    - name: Install SQL Server 2022
+      win_chocolatey:
+        name: sql-server-2022
+        state: present
+
+    - name: Install SQL Mgmt Tools
+      win_chocolatey:
+        name: sql-server-management-studio
+        state: present   
+
+    - name: Enable TCP and Named Pipes for SQL
+      ansible.windows.win_shell: |
+        Import-Module -Name SQLPS
+        $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $hostname
+        $uri = "ManagedComputer[@Name='" + (get-item env:\computername).Value + "']/ServerInstance[@Name='MSSQLSERVER']/ServerProtocol[@Name='Tcp']"
+        $Tcp=$wmi.GetSmoObject($uri)
+        $Tcp.IsEnabled = $true
+        $Tcp.Alter()
+        $Np = $wmi.GetSmoObject($uri)
+        $Np.IsEnabled = $true
+        $Np.Alter()
+        $Np
+
+    - name: Firewall rule to allow SQL Connections on TCP port 1433
+      community.windows.win_firewall_rule:
+        name: SQL-Remote
+        localport: 1433
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes    
+
+
+    # - name: Set iSCSI service startup mode to auto and ensure it is started
+    #   ansible.windows.win_service:
+    #     name: MSiSCSI
+    #     start_mode: auto
+    #     state: started 
+
+    - name: Reboot the machine with all defaults
+      ansible.windows.win_reboot:
+
+    - name: Configure iSCSI
+      ignore_errors: true
+      ansible.windows.win_shell: | 
+        Start-Service -Name MSiSCSI
+        Set-Service -Name MSiSCSI -StartupType Automatic
+        New-IscsiTargetPortal -TargetPortalAddress "{{ iscsi_share.IP }}"
+        Get-IscsiTarget | Connect-IscsiTarget
+
+   
+    - name: Format Disks on First Host
+      run_once: true
+      ignore_errors: true
+      ansible.windows.win_shell: |
+        Get-Disk | where FriendlyName -eq "Vmware Virtual SAN" | Initialize-Disk -PartitionStyle GPT -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume -FileSystem NTFS      
+
+    - name: Collect IP addresses from each host
+      set_fact:
+        ip_addresses: "{{ groups['sql'] | map('extract', hostvars, 'ansible_host') | list }}"    
+
+
+    - name: Create Cluster
+      run_once: true
+      ansible.windows.win_shell: |
+        $my_ip_list = "{{ ip_addresses }}" | ConvertFrom-Json
+        new-cluster -Name sql_cluster -Node $my_ip_list -AdministrativeAccessPoint Dns
+
+    - name: Enable AlwaysOn Avail Groups
+      ansible.windows.win_shell: | 
+        foreach ($node in Get-ClusterNode) {Enable-SqlAlwaysOn -ServerInstance $node -Force}  
+        Restart-Service MSSQLSERVER
+
+
+
+
+
+
+
