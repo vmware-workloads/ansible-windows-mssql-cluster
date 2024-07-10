@@ -23,7 +23,6 @@
         name: Multipath-IO
         state: present
 
-
     - name: Reboot the machine with all defaults
       ansible.windows.win_reboot: 
 
@@ -32,11 +31,9 @@
         Enable-MSDSMAutomaticClaim -BusType iSCSI
         Set-MPIOSetting -CustomPathRecovery Enabled -NewPathRecoveryInterval 20 -NewRetryCount 60 -NewPDORemovePeriod 60 -NewPathVerificationPeriod 30 -NewDiskTimeout 60
 
-
     - name: Ensure Chocolatey itself is installed, using community repo for the bootstrap
       win_chocolatey:
         name: chocolatey   
-    
     
     - name: Install SQL Server 2022
       win_chocolatey:
@@ -71,13 +68,6 @@
         state: present
         enabled: yes    
 
-
-    # - name: Set iSCSI service startup mode to auto and ensure it is started
-    #   ansible.windows.win_service:
-    #     name: MSiSCSI
-    #     start_mode: auto
-    #     state: started 
-
     - name: Reboot the machine with all defaults
       ansible.windows.win_reboot:
 
@@ -89,7 +79,6 @@
         New-IscsiTargetPortal -TargetPortalAddress "{{ iscsi_share.IP }}"
         Get-IscsiTarget | Connect-IscsiTarget
 
-   
     - name: Format Disks on First Host
       run_once: true
       ignore_errors: true
@@ -99,7 +88,6 @@
     - name: Collect IP addresses from each host
       set_fact:
         ip_addresses: "{{ groups['sql'] | map('extract', hostvars, 'ansible_host') | list }}"    
-
 
     - name: Create Cluster
       run_once: true
