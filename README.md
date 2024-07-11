@@ -9,7 +9,7 @@ This will automate the creation of a Windows SQL Cluster, using Aria Automation 
 * Linux jump server (tested with Ubuntu)
 * Ansible Automation Platform (configured with credentials, etc. as below)
 * Aria Configured with the ABX Extensions for Ansible & iSCSI
-* vSAN with the iSCSI service enabled
+* vSAN with the iSCSI service enabled (just the service, we will automate LUN/target creation)
 * Patience
 
 
