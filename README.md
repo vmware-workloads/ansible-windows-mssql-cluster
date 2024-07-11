@@ -20,7 +20,7 @@ This will automate the creation of a Windows SQL Cluster, using Aria Automation 
 ### 1. Obtain Image
 
 This has been tested using a Vanillia Windows Server 2022 Eval Image from Microsoft. <br>
-At the time of writing, the image can be obtained from:
+At the time of writing, the image can be obtained from: <br>
 [https://go.microsoft.com/fwlink/p/?LinkID=2195280&clcid=0x409&culture=en-us&country=US](https://go.microsoft.com/fwlink/p/?LinkID=2195280&clcid=0x409&culture=en-us&country=US)
 
 Download the ISO & create a new VM in vCenter
