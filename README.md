@@ -6,7 +6,7 @@ This will automate the creation of a Windows SQL Cluster, using Aria Automation 
 ## REQUIREMENTS:
 
 * Windows image (see below)
-* Linux jump server (tested with Ubuntu)
+* Linux jump server (we used an Ubuntu VM)
 * Ansible Automation Platform (configured with credentials, etc. as below)
 * Aria Configured with the ABX Extensions for [Ansible API](https://github.com/vmware-workloads/aap-api) & [vSAN iSCSI](https://github.com/vmware-workloads/vSAN-iSCSI-ABX/tree/main)
 * vSAN with the iSCSI service enabled (just the service, we will automate LUN/target creation)
@@ -28,19 +28,22 @@ Download the ISO & create a new VM in vCenter
 
 ### 2. Image Prep
 
-- Upload image to VC. Create a new VM & Power on.
-- Launch a Remote Console to the VM
-- Enable remote desktop
-- Install Cloudbase Cloud-Init:
+Broadly, the steps to prepare the image are as follows:
 
-  * Download from here: 
+* Upload image to VC. Create a new VM & Power on.
+* Launch a Remote Console to the VM
+* Ensure the user 'Administrator' is enabled and a password is set
+* Enable remote desktop
+* Install Cloudbase Cloud-Init:
+
+  * Download from here: <br>
                   https://github.com/cloudbase/cloudbase-init?src=so_5703fb3d92c20&cid=70134000001M5td
                 
-  * Follow the specific instructions as below, update the config files, but DO NOT run sysprep
+  * Follow the specific instructions as below, update the config files, but **DO NOT** run sysprep: <br>
                    https://docs.vmware.com/en/VMware-Aria-Automation/8.17/Using-Automation-Assembler/GUID-6A17EBEA-F9C3-486F-81DD-210EA065E92F.html
 
 
-- Install and configure OpenSSH, inserting the public key of the linux jump-server
+* Install and configure OpenSSH, inserting the public key of the Linux jump-server, as below:
 
 ``` powershell
 # install openssh
@@ -65,9 +68,10 @@ $authorized_key = "< public key of jump-host > "
 
 New-Item -Force -ItemType Directory -Path $env:USERPROFILE\.ssh; Add-Content -Force -Path $env:USERPROFILE\.ssh\authorized_keys -Value $authorizedKey
 
-Comment out "Match Group administrators" in %programdata%\ssh\sshd_config
 ```
 
+* **IMPORTANT**: Comment out "Match Group administrators" in the file `%programdata%\ssh\sshd_config`
+  
 
 ### 3. VC & Aria Actions
 
