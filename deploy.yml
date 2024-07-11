@@ -1,13 +1,11 @@
 - name: Installing Choco & SQL Server
   hosts: sql
   become: true
-  become_user: Administrator
-  become_method: runas 
+
 
   vars:
     ansible_connection: ssh
     ansible_shell_type: powershell
-    ansible_become_password: P@ssw0rd
 
   tasks:
 
@@ -18,12 +16,12 @@
         include_sub_features: true
         include_management_tools: true
 
-    - name: Install Failover-Clustering with sub features and management tools
+    - name: Install Multipath IO
       ansible.windows.win_feature:
         name: Multipath-IO
         state: present
 
-    - name: Reboot the machine with all defaults
+    - name: Reboot 
       ansible.windows.win_reboot: 
 
     - name: Configure MultiPath IO
@@ -34,7 +32,7 @@
     - name: Ensure Chocolatey itself is installed, using community repo for the bootstrap
       win_chocolatey:
         name: chocolatey   
-    
+     
     - name: Install SQL Server 2022
       win_chocolatey:
         name: sql-server-2022
@@ -68,7 +66,7 @@
         state: present
         enabled: yes    
 
-    - name: Reboot the machine with all defaults
+    - name: Reboot
       ansible.windows.win_reboot:
 
     - name: Configure iSCSI
@@ -89,7 +87,7 @@
       set_fact:
         ip_addresses: "{{ groups['sql'] | map('extract', hostvars, 'ansible_host') | list }}"    
 
-    - name: Create Cluster
+    - name: Create Windows Cluster
       run_once: true
       ansible.windows.win_shell: |
         $my_ip_list = "{{ ip_addresses }}" | ConvertFrom-Json
@@ -99,10 +97,3 @@
       ansible.windows.win_shell: | 
         foreach ($node in Get-ClusterNode) {Enable-SqlAlwaysOn -ServerInstance $node -Force}  
         Restart-Service MSSQLSERVER
-
-
-
-
-
-
-
