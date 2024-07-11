@@ -86,9 +86,9 @@ New-Item -Force -ItemType Directory -Path $env:USERPROFILE\.ssh; Add-Content -Fo
 - Create a Credential with:
 
 	* The private key of the jumpserver
-	* Escalation method as 'runas'
-	* Priv. Escallation User: 'Administrator'
-	* Priv. Escallation Pw: (Administrator's password)
+	* Escalation method as `runas`
+	* Priv. Escallation User: `Administrator`
+	* Priv. Escallation Pw: `(Administrator's password)`
 
 
 	
