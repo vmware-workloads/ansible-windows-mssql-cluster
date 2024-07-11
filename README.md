@@ -1,11 +1,15 @@
 # Windows SQL Cluster Deployment with Aria & AAP
 
+This will automate the creation of a Windows SQL Cluster, using Aria Automation and AAP and consuming vSAN iSCSI storage. 
+
+
 ## REQUIREMENTS:
 
 * Windows image (see below)
 * Linux jump server (tested with Ubuntu)
 * Ansible Automation Platform (configured with credentials, etc. as below)
-* Aria Configured with the ABX Extensions for Ansible & iSCSI 
+* Aria Configured with the ABX Extensions for Ansible & iSCSI
+* vSAN with the iSCSI service enabled
 * Patience
 
 
