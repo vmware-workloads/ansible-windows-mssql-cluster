@@ -75,10 +75,11 @@ New-Item -Force -ItemType Directory -Path $env:USERPROFILE\.ssh; Add-Content -Fo
 
 ### 3. VC & Aria Actions
 
-- Eject CDROM & set to 'Client Device' on the VM
-- Convert VM to Template
-- Create a new image mapping to the template in Aria
-- Create a Blueprint/Template to deploy (see example_blueprint.yaml)
+- Power down the VM
+- Eject the CDROM & set to 'Client Device' on the VM
+- Convert the VM to a Template
+- Create a new image mapping to the template in Aria Automation
+- Create a Blueprint/Template to deploy (see `example_blueprint.yaml`)
 
 
 ### 4. Ansible Setup
