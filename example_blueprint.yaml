@@ -1,0 +1,50 @@
+# Example Aria Blueprint to Deploy a 2-node Windows SQL Cluster
+# Using the iSCSI / AAP ABX & Ansible Automation Platform
+
+version: 1.0.0
+formatVersion: 1
+resources:
+  prod_net:
+    type: Cloud.NSX.Network
+    properties:
+      name: ls-web
+      networkType: routed
+  Custom_vSAN_ISCSI_1:
+    type: Custom.vSAN_ISCSI
+    properties:
+      vSAN_iSCSI_VMK: vmk3
+      vSAN_Cluster_Name: wdc-w01-cl01
+      vSAN_iSCSI_LUN_Prefix: ${env.blueprintName}
+      vSAN_iSCSI_Target: ${env.deploymentName}
+  sql_server:
+    type: Cloud.vSphere.Machine
+    properties:
+      count: 2
+      image: windows-server-2022
+      flavor: medium
+      remoteAccess:
+        authentication: publicPrivateKey
+        sshKey: ${jumphost-public-key-ed25519}
+      cloudConfigSettings:
+        deploymentFailOnCloudConfigRuntimeError: true
+      cloudConfig: |
+        #cloud-config
+        runcmd:
+          - powershell "Get-NetConnectionProfile  | Set-NetConnectionProfile -NetworkCategory Private"
+        set_hostname: ${self.name}-${count.index}
+      networks:
+        - network: ${resource.prod_net.id}
+  Custom_api_ansible_automation_platform_1:
+    type: Custom.api.ansible_automation_platform
+    properties:
+      hosts:
+        - ${resource.sql_server.*}
+      ssl_verify: false
+      host_groups:
+        sql:
+          - ${resource.sql_server.*}
+      inventory_name: ${env.blueprintName}-${env.deploymentId}
+      job_template_name: Windows Testing
+      group_variables:
+        sql:
+          iscsi_share: ${resource.Custom_vSAN_ISCSI_1.*}
