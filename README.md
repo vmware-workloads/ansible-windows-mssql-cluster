@@ -42,7 +42,7 @@ Broadly, the steps to prepare the image are as follows:
   * Follow the specific instructions as below, update the config files, but **DO NOT** run sysprep: <br>
                    https://docs.vmware.com/en/VMware-Aria-Automation/8.17/Using-Automation-Assembler/GUID-6A17EBEA-F9C3-486F-81DD-210EA065E92F.html
 
-
+<br>
 * Install and configure OpenSSH, inserting the public key of the Linux jump-server, as below:
 
 ``` powershell
