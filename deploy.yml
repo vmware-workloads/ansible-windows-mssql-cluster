@@ -9,6 +9,41 @@
 
   tasks:
 
+    - name: Get disk facts from Windows hosts
+      community.windows.win_disk_facts:
+
+    - name: Initialize disks
+      community.windows.win_initialize_disk:
+        disk_number: "{{ item.number }}"
+      when:
+          - item.partition_style == 'RAW'
+          - item.friendly_name == 'VMware Virtual disk'
+      loop: "{{ ansible_facts.disks }}"
+      loop_control:
+          label: "{{ item.unique_id }}"
+
+    - name: Partition disks
+      community.windows.win_partition:
+        drive_letter: "{{ item.letter }}"
+        disk_number: "{{ item.number }}"
+        partition_size: -1
+      loop:
+        - {letter: 'E', number: 1 }
+        - {letter: 'F', number: 2 }
+        - {letter: 'G', number: 3 }
+
+    - name: Format disks
+      community.windows.win_format:
+        drive_letter: "{{ item.letter }}"
+        file_system: NTFS
+        new_label: "{{ item.label }}"
+        allocation_unit_size: 65536
+      loop:
+        - {letter: 'E', label: "TEMPDB" }
+        - {letter: 'F', label: "DATA" }
+        - {letter: 'G', label: "LOG" }       
+
+
     - name: Install Failover-Clustering with sub features and management tools
       ansible.windows.win_feature:
         name: Failover-Clustering
@@ -77,7 +112,7 @@
         New-IscsiTargetPortal -TargetPortalAddress "{{ iscsi_share.IP }}"
         Get-IscsiTarget | Connect-IscsiTarget
 
-    - name: Format Disks on First Host
+    - name: Format iSCSI disks on First Host
       run_once: true
       ignore_errors: true
       ansible.windows.win_shell: |
@@ -97,3 +132,4 @@
       ansible.windows.win_shell: | 
         foreach ($node in Get-ClusterNode) {Enable-SqlAlwaysOn -ServerInstance $node -Force}  
         Restart-Service MSSQLSERVER
+
