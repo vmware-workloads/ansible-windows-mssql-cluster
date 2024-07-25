@@ -1,16 +1,141 @@
-USE master;
+-- Enable Ole Automation
+EXECUTE sp_configure 'show advanced options', 1
+RECONFIGURE WITH OVERRIDE
 GO
-CREATE DATABASE myDB
-ON
-( NAME = myDB_dat,
-    FILENAME = 'F:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\DATA\mydb_dat.mdf',
-    SIZE = 10,
-    MAXSIZE = 50,
-    FILEGROWTH = 5 )
+EXECUTE sp_configure 'Ole Automation Procedures', 1
+RECONFIGURE WITH OVERRIDE
+GO
+
+-- Create function for filesystem volumes
+-- Credit: Percy Reyes
+
+USE [master]
+GO
+CREATE FUNCTION [dbo].[ufn_LogicalDiskDrives]()
+RETURNS @DriveList Table
+  (
+   [DriveLetter]  CHAR(1)
+  ,[VolumeName]  VARCHAR(255)
+  ,[FileSystem]  VARCHAR(50)
+  )
+AS
+
+BEGIN
+  DECLARE @DriveLetter_ASCII_Code  INT
+  DECLARE @FileSystemInstance  INT
+  DECLARE @DriveCount  INT
+  DECLARE @DriveCollection  INT
+  DECLARE @Drive  INT
+  DECLARE @Property  NVARCHAR(100)    
+  DECLARE @DriveLetter  VARCHAR(1)  
+  DECLARE @FileSystem VARCHAR(128)
+  DECLARE @VolumeName VARCHAR(128)
+  DECLARE @IsReady VARCHAR(5)
+  
+  --Creating a File System Object for getting files or disk info.
+  exec sp_OACreate 'Scripting.FileSystemObject', @FileSystemInstance OUT
+
+  --Getting the collection of drives
+  exec sp_OAGetProperty @FileSystemInstance,'Drives', @DriveCollection OUT
+
+  --Getting the count of drives from collection
+  exec sp_OAGetProperty @DriveCollection,'Count', @DriveCount OUT
+
+  --starting from Drive "A" (ASCII 65) 
+  SET @DriveLetter_ASCII_Code = 65
+  --to "Z" (ASCII 90)
+  WHILE @DriveLetter_ASCII_Code <= 90
+
+  BEGIN
+
+  -- Creating the instance drive from Drive Collection 
+  SET @Property = 'item("'+CHAR(@DriveLetter_ASCII_Code)+'")'
+  exec sp_OAGetProperty @DriveCollection,@Property, @Drive OUT
+
+  -- Getting the drive letter property
+  exec sp_OAGetProperty @Drive,'DriveLetter', @DriveLetter OUT
+
+  IF @DriveLetter = CHAR(@DriveLetter_ASCII_Code)
+    BEGIN   
+    -- Getting more properties from each drive   
+    exec sp_OAGetProperty @Drive,'VolumeName', @VolumeName OUT 
+    exec sp_OAGetProperty @Drive,'FileSystem', @FileSystem OUT
+    exec sp_OAGetProperty @Drive,'IsReady'  , @IsReady OUT; 
+            
+   IF @IsReady='True'
+     INSERT INTO @DriveList ( [DriveLetter],[FileSystem],[VolumeName] )
+     VALUES( @DriveLetter,@FileSystem,@VolumeName)
+                             
+   END
+        -- forward next drive
+        SET @DriveLetter_ASCII_Code = @DriveLetter_ASCII_Code +1
+  END 
+  
+  EXEC sp_OADestroy @Drive 
+  EXEC sp_OADestroy @DriveCollection
+
+  RETURN
+END
+
+
+-- set drive vars from function
+
+DECLARE @log_drive NVARCHAR(50)
+DECLARE @log_path NVARCHAR(50)
+DECLARE @data_drive NVARCHAR(50)
+DECLARE @data_path NVARCHAR(50)
+DECLARE @dbName NVARCHAR(50);
+
+SET @dbName = N'MyDB';
+
+select @log_drive = [DriveLetter]
+from [dbo].[ufn_LogicalDiskDrives]()
+where Volumename = 'logs'
+set @log_path = @log_drive+":\" + @dbName + "_log.ldf"
+print @log_path
+
+select @data_drive = [DriveLetter]
+from [dbo].[ufn_LogicalDiskDrives]()
+where Volumename = 'data'
+set @data_path =  @data_drive+":\" + @dbName + "_data.mdf"
+print @data_path
+
+
+-- create db
+-- Construct the SQL command
+DECLARE @sql NVARCHAR(MAX);
+SET @sql = N'
+CREATE DATABASE ' + QUOTENAME(@dbName) + '
+ON PRIMARY 
+(
+    NAME = ' + QUOTENAME(@dbName + '_Data') + ',
+    FILENAME = ''' + @data_path + '''
+)
 LOG ON
-( NAME = myDB_log,
-    FILENAME = 'E:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\DATA\mydb_log.ldf',
-    SIZE = 5MB,
-    MAXSIZE = 25MB,
-    FILEGROWTH = 5MB ) ;
+(
+    NAME = ' + QUOTENAME(@dbName + '_Log') + ',
+    FILENAME = ''' + @log_path + '''
+)';
+
+-- Print the SQL command for debugging purposes
+PRINT @sql;
+
+-- Execute the SQL command
+EXEC sp_executesql @sql;
+
+
+-- Backup the DB
+
+DECLARE @backup_data_path NVARCHAR(50)
+DECLARE @backup_log_path NVARCHAR(50)
+
+set @backup_data_path =  @data_drive+":\" + @dbName +".bak"
+set @backup_log_path =  @log_drive+":\" + @dbName +".log"
+
+BACKUP DATABASE @dbName
+TO DISK = @backup_data_path ;
+
+BACKUP LOG @dbName 
+TO DISK = @backup_log_path ;
+
 GO
