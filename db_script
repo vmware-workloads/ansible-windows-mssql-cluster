@@ -76,7 +76,7 @@ BEGIN
 
   RETURN
 END
-
+GO
 
 -- set drive vars from function
 
