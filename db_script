@@ -1,3 +1,8 @@
+--- example SQL script
+--- Creates a database 'myDB' with a 'myAG' avail group
+--- Database files are in the data / logs directory as labeled by the OS
+
+
 -- Enable Ole Automation
 EXECUTE sp_configure 'show advanced options', 1
 RECONFIGURE WITH OVERRIDE
@@ -155,15 +160,9 @@ PRINT ':connect ' +  @@SERVERNAME + '';
 GO
 :Out stdout
 
--- connect to secondary
-:r $(TEMP)\secondary.temp 
-
--- connect to primary
-:r $(TEMP)\primary.temp 
-
 
 --- YOU MUST EXECUTE THE FOLLOWING SCRIPT IN SQLCMD MODE.
-:r $(TEMP)\primary.temp 
+:r $(TEMP)\primary.temp
 
 IF (SELECT state FROM sys.endpoints WHERE name = N'Hadr_endpoint') <> 0
 BEGIN
@@ -181,7 +180,7 @@ GRANT CONNECT ON ENDPOINT::[Hadr_endpoint] TO [NT Service\MSSQLSERVER]
 
 GO
 
-:r $(TEMP)\primary.temp 
+:r $(TEMP)\primary.temp
 
 IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name='AlwaysOn_health')
 BEGIN
@@ -225,17 +224,19 @@ END
 
 GO
 
-:r $(TEMP)\primary.temp 
+:r $(TEMP)\primary.temp
 
 USE [master]
 
 GO
 
+---
+
 -- Define your T-SQL variables
 DECLARE @PrimaryServer NVARCHAR(128) = @@SERVERNAME;
 DECLARE @SecondaryServer NVARCHAR(128) = (select member_name from master.sys.dm_hadr_cluster_members where member_name like 'sql-%' and member_name not like @@servername);
 DECLARE @AvailabilityGroupName NVARCHAR(128) = 'MyAG';
-DECLARE @DatabaseName NVARCHAR(128) = 'mydb';
+DECLARE @DatabaseName NVARCHAR(128) = 'MyDB';
 
 print @primaryServer
 print @secondaryServer
@@ -246,18 +247,25 @@ DECLARE @sql NVARCHAR(MAX);
 SET @sql = N'
 CREATE AVAILABILITY GROUP ' + QUOTENAME(@AvailabilityGroupName) + N'
 WITH (AUTOMATED_BACKUP_PREFERENCE = SECONDARY,
+DB_FAILOVER = OFF,
+DTC_SUPPORT = NONE,
+REQUIRED_SYNCHRONIZED_SECONDARIES_TO_COMMIT = 0)
 FOR DATABASE ' + QUOTENAME(@DatabaseName) + N'
 REPLICA ON
     N''' + @PrimaryServer + N''' WITH (
         ENDPOINT_URL = N''TCP://' + @PrimaryServer + N':5022'',
-        FAILOVER_MODE = manual,
-        AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
-        SECONDARY_ROLE (ALLOW_CONNECTIONS = READ_ONLY)),
+        FAILOVER_MODE = AUTOMATIC,
+        AVAILABILITY_MODE = SYNCHRONOUS_COMMIT,
+        BACKUP_PRIORITY = 50, 
+        SEEDING_MODE = AUTOMATIC, 
+        SECONDARY_ROLE (ALLOW_CONNECTIONS = NO)),
     N''' + @SecondaryServer + N''' WITH (
         ENDPOINT_URL = N''TCP://' + @SecondaryServer + N':5022'',
-        FAILOVER_MODE = manual,
-        AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
-        SECONDARY_ROLE (ALLOW_CONNECTIONS = READ_ONLY));';
+        FAILOVER_MODE = AUTOMATIC,
+        AVAILABILITY_MODE = SYNCHRONOUS_COMMIT,
+        BACKUP_PRIORITY = 50, 
+        SEEDING_MODE = AUTOMATIC, 
+        SECONDARY_ROLE (ALLOW_CONNECTIONS = NO));';
 
 -- Print the constructed SQL for debugging purposes
 PRINT @sql;
@@ -266,9 +274,14 @@ PRINT @sql;
 -- Execute the dynamic SQL command
 EXEC sp_executesql @sql;
 
+
+---
+
+
+
 GO
 
-:r $(TEMP)\secondary.temp
+:r $(TEMP)\secondary.temp 
 
 ALTER AVAILABILITY GROUP [myAG] JOIN;
 
