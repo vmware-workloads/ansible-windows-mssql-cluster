@@ -237,7 +237,7 @@ USE [master]
 
 GO
 
---- now create the AG
+--- now create the AG 'MyAG'
 
 -- Define your T-SQL variables
 DECLARE @PrimaryServer NVARCHAR(128) = @@SERVERNAME;
