@@ -3,6 +3,8 @@
 --- Database files are in the data / logs directory as labeled by the OS
 
 
+--- First, pick up the disk volume names for data and logs
+
 -- Enable Ole Automation
 EXECUTE sp_configure 'show advanced options', 1
 RECONFIGURE WITH OVERRIDE
@@ -83,6 +85,7 @@ BEGIN
 END
 GO
 
+
 -- set drive vars from function
 
 DECLARE @log_drive NVARCHAR(50)
@@ -91,6 +94,7 @@ DECLARE @data_drive NVARCHAR(50)
 DECLARE @data_path NVARCHAR(50)
 DECLARE @dbName NVARCHAR(50);
 
+-- set the databse name to "MyDB"
 SET @dbName = N'MyDB';
 
 select @log_drive = [DriveLetter]
@@ -106,7 +110,8 @@ set @data_path =  @data_drive+":\" + @dbName + "_data.mdf"
 print @data_path
 
 
--- create db
+-- Create the databse using the dbName defined above
+
 -- Construct the SQL command
 DECLARE @sql NVARCHAR(MAX);
 SET @sql = N'
@@ -129,7 +134,7 @@ PRINT @sql;
 EXEC sp_executesql @sql;
 
 
--- Backup the DB
+-- Backup the DB created above 
 
 DECLARE @backup_data_path NVARCHAR(50)
 DECLARE @backup_log_path NVARCHAR(50)
@@ -144,6 +149,9 @@ BACKUP LOG @dbName
 TO DISK = @backup_log_path ;
 
 GO
+
+
+-- Now that we have a DB which is backed-up, an AG can be created
 
 
 --- write connect argument to secondary to file
@@ -161,7 +169,6 @@ GO
 :Out stdout
 
 
---- YOU MUST EXECUTE THE FOLLOWING SCRIPT IN SQLCMD MODE.
 :r $(TEMP)\primary.temp
 
 IF (SELECT state FROM sys.endpoints WHERE name = N'Hadr_endpoint') <> 0
@@ -230,7 +237,7 @@ USE [master]
 
 GO
 
----
+--- now create the AG
 
 -- Define your T-SQL variables
 DECLARE @PrimaryServer NVARCHAR(128) = @@SERVERNAME;
@@ -275,8 +282,7 @@ PRINT @sql;
 EXEC sp_executesql @sql;
 
 
----
-
+--- Finally, connect to the secondary to join to the AG
 
 
 GO
