@@ -1,4 +1,4 @@
-- name: Installing Choco & SQL Server
+- name: Setup SQL Always-On Cluster
   hosts: sql
   become: true
 
@@ -6,8 +6,23 @@
   vars:
     ansible_connection: ssh
     ansible_shell_type: powershell
+    start_letter: 'E'
 
   tasks:
+
+    - name: Borrow IP address from Adapter 2 from the first host
+      run_once: true
+      ansible.windows.win_shell: |
+        (Get-NetIPAddress -InterfaceAlias 'Ethernet2' | Where AddressFamily -eq "IPv4").IPAddress
+      register: cluster_ip
+
+    - name: Remove borrowed IP from Adapter 2
+      ansible.windows.win_shell: | 
+        Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false  
+
+    - name: Ensure Adapter 0 is set to Primary
+      ansible.windows.win_shell: |   
+        Set-NetIPInterface -InterfaceAlias 'Ethernet0' -InterfaceMetric 0
 
     - name: Get disk facts from Windows hosts
       community.windows.win_disk_facts:
@@ -21,6 +36,45 @@
       loop: "{{ ansible_facts.disks }}"
       loop_control:
           label: "{{ item.unique_id }}"
+
+###
+
+    # - name: Create mapping of disk names to letters
+    #   set_fact:
+    #     disk_letter_mapping: "{{ disk_letter_mapping | default({}) | combine({ item: (start_letter | ord + idx) | chr }) }}"
+    #   loop: "{{ disk_names }}"
+    #   loop_control:
+    #     index_var: idx
+
+    # - name: Print the mapping of disk names to letters
+    #   debug:
+    #     var: disk_letter_mapping
+
+    # - name: Partition disks and assign letters
+    #   community.windows.win_partition:
+    #     disk_number: "{{ item.1 }}"  # Disk numbers start from 1
+    #     drive_letter: "{{ item.0 }}"
+    #     partition_size: 10GB  # Adjust partition size as needed
+    #   loop: "{{ disk_letter_mapping | dict2items | map(attribute='value') | enumerate(start=1) }}"
+    #   register: partition_results
+
+    # - name: Print partition results
+    #   debug:
+    #     var: partition_results
+
+    # - name: Format the disks
+    #   community.windows.win_format:
+    #     drive_letter: "{{ item.1 }}"
+    #     file_system: NTFS
+    #     full: yes
+    #   loop: "{{ disk_letter_mapping | dict2items | map(attribute='value') | enumerate(start=1) }}"
+    #   register: format_results
+
+    # - name: Print format results
+    #   debug:
+    #     var: format_results
+
+###
 
     - name: Partition disks
       community.windows.win_partition:
@@ -39,9 +93,9 @@
         new_label: "{{ item.label }}"
         allocation_unit_size: 65536
       loop:
-        - {letter: 'E', label: "TEMPDB" }
-        - {letter: 'F', label: "DATA" }
-        - {letter: 'G', label: "LOG" }       
+        - {letter: 'E', label: "{{ disk_names[0] }}" }
+        - {letter: 'F', label: "{{ disk_names[1] }}" }
+        - {letter: 'G', label: "{{ disk_names[2] }}" }       
 
 
     - name: Install Failover-Clustering with sub features and management tools
@@ -72,6 +126,11 @@
       win_chocolatey:
         name: sql-server-2022
         state: present
+      retries: 3
+      delay: 3
+      register: result
+      until: result.rc == 0  
+
 
     - name: Install SQL Mgmt Tools
       win_chocolatey:
@@ -104,13 +163,17 @@
     - name: Reboot
       ansible.windows.win_reboot:
 
-    - name: Configure iSCSI
+    - name: Start iSCSI Service + Set to Auto Start
+      ansible.windows.win_service:
+        name: MSiSCSI
+        start_mode: auto
+        state: started   
+
+    - name: Configure iSCSI Target + LUNs
       ignore_errors: true
       ansible.windows.win_shell: | 
-        Start-Service -Name MSiSCSI
-        Set-Service -Name MSiSCSI -StartupType Automatic
         New-IscsiTargetPortal -TargetPortalAddress "{{ iscsi_share.IP }}"
-        Get-IscsiTarget | Connect-IscsiTarget
+        Get-IscsiTarget | Where NodeAddress -eq "{{ iscsi_share.vSAN_iSCSI_iqn }}" | Connect-IscsiTarget
 
     - name: Format iSCSI disks on First Host
       run_once: true
@@ -118,18 +181,59 @@
       ansible.windows.win_shell: |
         Get-Disk | where FriendlyName -eq "Vmware Virtual SAN" | Initialize-Disk -PartitionStyle GPT -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume -FileSystem NTFS      
 
+
     - name: Collect IP addresses from each host
       set_fact:
-        ip_addresses: "{{ groups['sql'] | map('extract', hostvars, 'ansible_host') | list }}"    
+        ip_addresses: "{{ groups['sql'] | map('extract', hostvars, 'ansible_host') | list }}" 
+        
 
     - name: Create Windows Cluster
       run_once: true
       ansible.windows.win_shell: |
         $my_ip_list = "{{ ip_addresses }}" | ConvertFrom-Json
-        new-cluster -Name sql_cluster -Node $my_ip_list -AdministrativeAccessPoint Dns
+        new-cluster -Name {{ 'sql_cluster' + '-' + deployment_id }} -Node $my_ip_list -AdministrativeAccessPoint Dns -StaticAddress {{ cluster_ip.stdout }}
 
     - name: Enable AlwaysOn Avail Groups
       ansible.windows.win_shell: | 
         foreach ($node in Get-ClusterNode) {Enable-SqlAlwaysOn -ServerInstance $node -Force}  
         Restart-Service MSSQLSERVER
+
+
+    - name: Set drive/folder permissions for the sql service
+      ansible.windows.win_acl:
+        user: NT Service\MSSQLSERVER
+        path: "{{ item.path }}"
+        rights: FullControl
+        type: allow
+        state: present
+      loop:
+        - { path: 'E:\' }
+        - { path: 'F:\' }
+        - { path: 'G:\' }
+
+    # - name: Set ACL for NT SERVICE\MSSQLSERVER
+    #   ansible.windows.win_acl:
+    #     path: "{{ item.1 }}:\\"
+    #     user: 'NT SERVICE\MSSQLSERVER'
+    #     permission: full
+    #     type: allow
+    #   loop: "{{ disk_letter_mapping | dict2items | map(attribute='value') | enumerate(start=1) }}"
+    #   register: acl_results
+
+    # - name: Print ACL results
+    #   debug:
+    #     var: acl_results
+
+
+    - name: Run DB script on first host
+      run_once: true
+      ansible.windows.win_shell: |
+        sqlcmd -S 127.0.0.1 -E -i "{{ db_script_location }}"
+   
+
+
+
+
+
+
 
