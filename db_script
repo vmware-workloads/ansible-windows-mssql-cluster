@@ -231,14 +231,40 @@ USE [master]
 
 GO
 
-CREATE AVAILABILITY GROUP [myAG]
-WITH (AUTOMATED_BACKUP_PREFERENCE = SECONDARY,
-DB_FAILOVER = OFF,
-DTC_SUPPORT = NONE,
-REQUIRED_SYNCHRONIZED_SECONDARIES_TO_COMMIT = 0)
-FOR DATABASE [MyDB]
-REPLICA ON N'sql-e8216794-f' WITH (ENDPOINT_URL = N'TCP://sql-e8216794-f:5022', FAILOVER_MODE = MANUAL, AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT, BACKUP_PRIORITY = 50, SEEDING_MODE = AUTOMATIC, SECONDARY_ROLE(ALLOW_CONNECTIONS = NO)),
-	N'sql-fe1f6b56-a' WITH (ENDPOINT_URL = N'TCP://sql-fe1f6b56-a:5022', FAILOVER_MODE = MANUAL, AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT, BACKUP_PRIORITY = 50, SEEDING_MODE = AUTOMATIC, SECONDARY_ROLE(ALLOW_CONNECTIONS = NO));
+-- Define your T-SQL variables
+DECLARE @PrimaryServer NVARCHAR(128) = @@SERVERNAME;
+DECLARE @SecondaryServer NVARCHAR(128) = (select member_name from master.sys.dm_hadr_cluster_members where member_name like 'sql-%' and member_name not like @@servername);
+DECLARE @AvailabilityGroupName NVARCHAR(128) = 'MyAG';
+DECLARE @DatabaseName NVARCHAR(128) = 'mydb';
+
+print @primaryServer
+print @secondaryServer
+
+-- Construct the dynamic SQL command
+DECLARE @sql NVARCHAR(MAX);
+
+SET @sql = N'
+CREATE AVAILABILITY GROUP ' + QUOTENAME(@AvailabilityGroupName) + N'
+WITH (CLUSTER_TYPE = EXTERNAL)
+FOR DATABASE ' + QUOTENAME(@DatabaseName) + N'
+REPLICA ON
+    N''' + @PrimaryServer + N''' WITH (
+        ENDPOINT_URL = N''TCP://' + @PrimaryServer + N':5022'',
+        FAILOVER_MODE = EXTERNAL,
+        AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
+        SECONDARY_ROLE (ALLOW_CONNECTIONS = READ_ONLY)),
+    N''' + @SecondaryServer + N''' WITH (
+        ENDPOINT_URL = N''TCP://' + @SecondaryServer + N':5022'',
+        FAILOVER_MODE = EXTERNAL,
+        AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
+        SECONDARY_ROLE (ALLOW_CONNECTIONS = READ_ONLY));';
+
+-- Print the constructed SQL for debugging purposes
+PRINT @sql;
+
+
+-- Execute the dynamic SQL command
+EXEC sp_executesql @sql;
 
 GO
 
