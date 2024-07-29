@@ -1,14 +1,122 @@
-# Example Aria Blueprint to Deploy a 2-node Windows SQL Cluster
-# Using the iSCSI / AAP ABX & Ansible Automation Platform
-
+metadata:
+  name: Windows-SQL
+  description: Creates Windows machines and vSAN iSCSI volumes / allocates IPs ready for SQL
 version: 1.0.0
-formatVersion: 1
+formatVersion: 2
+variables:
+  ansible:
+    template_name: Windows SQL
+  windows:
+    user: Admin
+  ports:
+    sql_port: 1433
+  iscsi:
+    size: 1
+    count: 1
+  db_script:
+    location: c:\db_script
+inputs:
+  dbScript:
+    type: string
+    title: DB Script URL
+  vmSize:
+    type: string
+    title: VM Size
+    default: medium
+    enum:
+      - small
+      - medium
+      - large
+  vmCount:
+    title: Number ofVMs
+    type: integer
+    default: 2
+  diskConfig:
+    default:
+      - name: logs
+        size: 80
+      - name: data
+        size: 80
+      - name: temp_db
+        size: 80
+    type: array
+    title: |
+      Log and Data disks (per VM).
+      ADD AT LEAST TWO disks called 'data' and 'logs'
+    minItems: 2
+    maxItems: 5
+    items:
+      type: object
+      properties:
+        size:
+          type: integer
+          title: Size GB
+          default: 80
+          maximum: 200
+        name:
+          type: string
+          title: name
+  os_diskSize:
+    type: integer
+    title: OS Disk Size (GB)
+    minimum: 90
+    maximum: 200
+    default: 90
+  vmNotes:
+    title: VM Notes
+    type: string
+    default: Windows-SQL
 resources:
-  prod_net:
+  iscsi_net:
+    type: Cloud.NSX.Network
+    properties:
+      name: ls-vm
+      networkType: existing
+      constraints:
+        - tag: segment_name:ls-vm
+  web_net:
     type: Cloud.NSX.Network
     properties:
       name: ls-web
-      networkType: routed
+      networkType: existing
+      constraints:
+        - tag: segment_name:ls-prod
+  extra_net:
+    type: Cloud.NSX.Network
+    properties:
+      name: ls-web2
+      networkType: existing
+      constraints:
+        - tag: segment_name:ls-prod
+  web_lb:
+    type: Cloud.LoadBalancer
+    properties:
+      routes:
+        - protocol: TCP
+          port: ${variable.ports.sql_port}
+          instanceProtocol: TCP
+          instancePort: ${variable.ports.sql_port}
+          healthCheckConfiguration:
+            protocol: TCP
+            port: ${variable.ports.sql_port}
+            intervalSeconds: 5
+            timeoutSeconds: 15
+            unhealthyThreshold: 5
+            healthyThreshold: 2
+      network: ${resource.web_net.id}
+      instances: ${resource.sql_server[*].id}
+      internetFacing: false
+  disk:
+    type: Cloud.vSphere.Disk
+    allocatePerInstance: true
+    properties:
+      capacityGb: ${input.diskConfig[count.index % length(input.diskConfig)].size}
+      SCSIController: ${'SCSI_Controller_' + to_string(count.index % 4)}
+      name: ${input.diskConfig[count.index % length(input.diskConfig)].name}
+      tags:
+        - key: App
+          value: ${self.name}-${count.index}
+      count: ${input.vmCount * length(input.diskConfig)}
   Custom_vSAN_ISCSI_1:
     type: Custom.vSAN_ISCSI
     properties:
@@ -16,24 +124,47 @@ resources:
       vSAN_Cluster_Name: wdc-w01-cl01
       vSAN_iSCSI_LUN_Prefix: ${env.blueprintName}
       vSAN_iSCSI_Target: ${env.deploymentName}
+      vSAN_iSCSI_dataluns: ${variable.iscsi.count}
+      vSAN_iSCSI_lunSize: ${variable.iscsi.size}
   sql_server:
     type: Cloud.vSphere.Machine
+    allocatePerInstance: true
     properties:
-      count: 2
+      count: ${input.vmCount}
       image: windows-server-2022
       flavor: medium
       remoteAccess:
         authentication: publicPrivateKey
-        sshKey: ${jumphost-public-key-ed25519}
+        sshKey: ${secret.jumphost-public-key-ed25519}
       cloudConfigSettings:
         deploymentFailOnCloudConfigRuntimeError: true
       cloudConfig: |
         #cloud-config
+        users:
+          - default
+          - name: Administrator
+            groups: Administrators
+            passwd: ${secret.windows-password}
+          - name: ${variable.windows.user}
+            groups: Administrators
+            passwd: ${secret.windows-password}
         runcmd:
           - powershell "Get-NetConnectionProfile  | Set-NetConnectionProfile -NetworkCategory Private"
-        set_hostname: ${self.name}-${count.index}
+          - powershell "wget -Uri ${input.dbScript} -Outfile ${variable.db_script.location}"
+        set_hostname: ${ substring('sql-' + uuid(),0,14) }
       networks:
-        - network: ${resource.prod_net.id}
+        - network: ${resource.web_net.id}
+          assignment: static
+          primaryAddress: true
+          deviceIndex: 0
+        - network: ${resource.iscsi_net.id}
+          deviceIndex: 1
+        - network: ${resource.extra_net.id}
+          assignment: static
+          deviceIndex: 2
+      attachedDisks: ${map_to_object(slice(resource.disk[*].id, length(input.diskConfig) * count.index, length(input.diskConfig) * (count.index + 1)), "source")}
+      storage:
+        bootDiskCapacityInGB: ${input.os_diskSize}
   Custom_api_ansible_automation_platform_1:
     type: Custom.api.ansible_automation_platform
     properties:
@@ -44,7 +175,14 @@ resources:
         sql:
           - ${resource.sql_server.*}
       inventory_name: ${env.blueprintName}-${env.deploymentId}
-      job_template_name: Windows Testing
+      inventory_variables:
+        deployment_id: ${env.deploymentId}
+        db_script_location: ${variable.db_script.location}
+        use_ssl: true
+        lb_address: ${resource.web_lb.address}
+        disk_number: ${length(input.diskConfig)}
+        disk_names: ${filter_by(resource.disk.name, (k,v) => v >= 0 && v < length(input.diskConfig))}
+      job_template_name: ${variable.ansible.template_name}
       group_variables:
         sql:
           iscsi_share: ${resource.Custom_vSAN_ISCSI_1.*}
