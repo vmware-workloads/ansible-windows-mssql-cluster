@@ -1,5 +1,5 @@
 - name: Setup SQL Always-On Cluster
-  hosts: sql
+  hosts: all
   become: true
 
 
