@@ -39,40 +39,51 @@
 
 ###
 
-    # - name: Create mapping of disk names to letters
-    #   set_fact:
-    #     disk_letter_mapping: "{{ disk_letter_mapping | default({}) | combine({ item: (start_letter | ord + idx) | chr }) }}"
-    #   loop: "{{ disk_names }}"
-    #   loop_control:
-    #     index_var: idx
+    - name: Get disk facts
+      community.windows.win_disk_facts:
 
-    # - name: Print the mapping of disk names to letters
-    #   debug:
-    #     var: disk_letter_mapping
+    - name: Set variables
+      set_fact:
+        disk_names: "{{ ansible_facts.disks | map(attribute='label') | list }}"
+        start_letter: "d"
+        drive_count: 3
+        start_uni: "{{ start_letter | ord }}"
+        end_uni: "{{ start_letter | ord + drive_count }}"
 
-    # - name: Partition disks and assign letters
-    #   community.windows.win_partition:
-    #     disk_number: "{{ item.1 }}"  # Disk numbers start from 1
-    #     drive_letter: "{{ item.0 }}"
-    #     partition_size: 10GB  # Adjust partition size as needed
-    #   loop: "{{ disk_letter_mapping | dict2items | map(attribute='value') | enumerate(start=1) }}"
-    #   register: partition_results
+    - name: Create drive mapping dictionary
+      set_fact:
+        drive_mapping: "{{ dict(disk_names | zip((range(start_uni + 1, end_uni) | map('chr')))) }}"
 
-    # - name: Print partition results
-    #   debug:
-    #     var: partition_results
+    - name: Display the drive mapping
+      debug:
+        var: drive_mapping
 
-    # - name: Format the disks
-    #   community.windows.win_format:
-    #     drive_letter: "{{ item.1 }}"
-    #     file_system: NTFS
-    #     full: yes
-    #   loop: "{{ disk_letter_mapping | dict2items | map(attribute='value') | enumerate(start=1) }}"
-    #   register: format_results
+    - name: Partition and format the drives
+      loop: "{{ drive_mapping | dict2items }}"
+      vars:
+        drive_letter: "{{ item.value }}"
+        disk_name: "{{ item.key }}"
+      tasks:
+        - name: Partition the disk
+          community.windows.win_partition:
+            drive_letter: "{{ drive_letter }}"
+            partition_size: max
+            fs_type: NTFS
+            volume_label: "{{ disk_name }}"
+          register: partition_result
 
-    # - name: Print format results
-    #   debug:
-    #     var: format_results
+        - name: Format the partition
+          community.windows.win_format:
+            drive_letter: "{{ drive_letter }}"
+            file_system: NTFS
+            full: no
+            label: "{{ disk_name }}"
+          when: partition_result.changed
+          register: format_result
+
+        - name: Confirm formatting result
+          debug:
+            msg: "Drive {{ drive_letter }} labeled '{{ disk_name }}' has been formatted."
 
 ###
 
@@ -95,7 +106,10 @@
       loop:
         - {letter: 'E', label: "{{ disk_names[0] }}" }
         - {letter: 'F', label: "{{ disk_names[1] }}" }
-        - {letter: 'G', label: "{{ disk_names[2] }}" }       
+        - {letter: 'G', label: "{{ disk_names[2] }}" } 
+
+###
+        
 
 
     - name: Install Failover-Clustering with sub features and management tools
