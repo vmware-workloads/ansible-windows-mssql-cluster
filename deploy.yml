@@ -36,10 +36,11 @@
       loop: "{{ ansible_facts.disks }}"
       loop_control:
           label: "{{ item.unique_id }}"
-      register: disks
+      register: disks.physical_disk.device_id
       
     - debug:
-        var: ansible_facts.disks[1].physical_disk.device_id
+        # var: ansible_facts.disks[1].physical_disk.device_id
+        var: disks.physical_disk.device_id
 
 
 
