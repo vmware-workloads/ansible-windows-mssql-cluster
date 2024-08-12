@@ -36,6 +36,10 @@
       loop: "{{ ansible_facts.disks }}"
       loop_control:
           label: "{{ item.unique_id }}"
+      register: disk_number
+      
+      - debug:
+          var: disk_number    
 
 ###
 
