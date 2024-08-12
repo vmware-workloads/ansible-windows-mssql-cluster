@@ -67,16 +67,16 @@
 
     - name: Get device IDs
       set_fact: device_id="{{ item.physical_disk.device_id }}"
-      register: device_id_list
       with_items: "{{ item.physical_disk.device_id }}"
       # when:
       #     - item.partition_style == 'RAW'
       #     - item.friendly_name == 'VMware Virtual disk'     
-      loop: "{{ ansible_facts.disks }}"     
+      loop: "{{ ansible_facts.disks }}"
+      register: device_id_list     
 
     - name: Display the device id list
       debug:
-        var: device_id_list.results  
+        var: device_id_list.ansible_facts.device_id
 
     - name: Create drive letter disk name dict 
       set_fact:
