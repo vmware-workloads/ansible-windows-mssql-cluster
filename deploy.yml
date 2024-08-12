@@ -39,7 +39,7 @@
       register: disks
       
     - debug:
-        var: ansible_facts.disks[1].serial_number
+        var: ansible_facts.disks[1].physical_disk.device_id
 
 
 
