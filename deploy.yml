@@ -17,11 +17,11 @@
       register: cluster_ip
 
     - name: Remove borrowed IP from Adapter 2
-      ansible.windows.win_shell: | 
+      ansible.windows.win_shell: |
         Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false  
 
     - name: Ensure Adapter 0 is set to Primary
-      ansible.windows.win_shell: |   
+      ansible.windows.win_shell: |
         Set-NetIPInterface -InterfaceAlias 'Ethernet0' -InterfaceMetric 0
 
     - name: Get disk facts from Windows hosts
@@ -87,26 +87,26 @@
 
 ###
 
-    - name: Partition disks
-      community.windows.win_partition:
-        drive_letter: "{{ item.letter }}"
-        disk_number: "{{ item.number }}"
-        partition_size: -1
-      loop:
-        - {letter: 'E', number: 1 }
-        - {letter: 'F', number: 2 }
-        - {letter: 'G', number: 3 }
+    # - name: Partition disks
+    #   community.windows.win_partition:
+    #     drive_letter: "{{ item.letter }}"
+    #     disk_number: "{{ item.number }}"
+    #     partition_size: -1
+    #   loop:
+    #     - {letter: 'E', number: 1 }
+    #     - {letter: 'F', number: 2 }
+    #     - {letter: 'G', number: 3 }
 
-    - name: Format disks
-      community.windows.win_format:
-        drive_letter: "{{ item.letter }}"
-        file_system: NTFS
-        new_label: "{{ item.label }}"
-        allocation_unit_size: 65536
-      loop:
-        - {letter: 'E', label: "{{ disk_names[0] }}" }
-        - {letter: 'F', label: "{{ disk_names[1] }}" }
-        - {letter: 'G', label: "{{ disk_names[2] }}" } 
+    # - name: Format disks
+    #   community.windows.win_format:
+    #     drive_letter: "{{ item.letter }}"
+    #     file_system: NTFS
+    #     new_label: "{{ item.label }}"
+    #     allocation_unit_size: 65536
+    #   loop:
+    #     - {letter: 'E', label: "{{ disk_names[0] }}" }
+    #     - {letter: 'F', label: "{{ disk_names[1] }}" }
+    #     - {letter: 'G', label: "{{ disk_names[2] }}" } 
 
 ###
         
