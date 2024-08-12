@@ -39,7 +39,7 @@
       register: disks
       
     - debug:
-        var: disks.results.physical_disk.device_id
+        var: "{{ disks | from_json | list }}"
 
 ###
 
