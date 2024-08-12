@@ -39,8 +39,12 @@
       register: disks
       
     - debug:
-        var: ansible_facts.number
+        var: '{{ ansible_facts.disks|selectattr(".physical_disk.device_id") }}'
 
+
+    - fail
+
+    
 ###
 
 
