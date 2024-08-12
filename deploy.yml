@@ -62,7 +62,7 @@
 
     - name: Create drive mapping dictionary
       set_fact:
-        drive_mapping: "{{ dict(disk_names, letters) }}"
+        drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
 
     - name: Display the drive mapping
       debug:
