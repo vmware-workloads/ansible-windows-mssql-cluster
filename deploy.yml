@@ -58,32 +58,23 @@
       debug:
         var: drive_mapping
 
-    - name: Partition and format the drives
-      loop: "{{ drive_mapping | dict2items }}"
-      vars:
+    - name: Partition the drives
+      community.windows.win_partition:
         drive_letter: "{{ item.value }}"
-        disk_name: "{{ item.key }}"
-      tasks:
-        - name: Partition the disk
-          community.windows.win_partition:
-            drive_letter: "{{ drive_letter }}"
-            partition_size: max
-            fs_type: NTFS
-            volume_label: "{{ disk_name }}"
-          register: partition_result
+        partition_size: -1
+        register: partition_result
+        loop: "{{ drive_mapping | dict2items }}"   
 
-        - name: Format the partition
-          community.windows.win_format:
-            drive_letter: "{{ drive_letter }}"
-            file_system: NTFS
-            full: no
-            label: "{{ disk_name }}"
-          when: partition_result.changed
-          register: format_result
+    - name: Format disks
+      community.windows.win_format:
+        drive_letter: "{{ item.value }}"
+        file_system: NTFS
+        new_label: "{{ item.key }}"
+        allocation_unit_size: 65536
+      loop: "{{ drive_mapping | dict2items }}"   
+      register: format_result
 
-        - name: Confirm formatting result
-          debug:
-            msg: "Drive {{ drive_letter }} labeled '{{ disk_name }}' has been formatted."
+
 
 ###
 
