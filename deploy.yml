@@ -45,13 +45,12 @@
     - name: Set variables
       set_fact:
         start_letter: "d"
-        #drive_count: 3
-        # start_uni: "{{ start_letter | ord }}"
-        # end_uni: "{{ start_letter | ord + drive_count }}"
+
 
     - name: Create drive mapping dictionary
       set_fact:
-        drive_mapping: "{{ dict(disk_names | zip((range(ord(start_letter) + 1, ord(start_letter) + len(disk_names)) | map('chr')))) }}"
+        letters="[ 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']"
+        drive_mapping: "{{ dict(disk_names | zip( letters | map('chr')))) }}"
 
     - name: Display the drive mapping
       debug:
