@@ -63,7 +63,7 @@
           - n
           - o
           - p
-        drive_mapping: "{{ dict(disk_names | zip( letters | map('chr')))) }}"
+        drive_mapping: "{{ dict(disk_names | zip( letters | map('chr'))) }}"
 
     - name: Display the drive mapping
       debug:
