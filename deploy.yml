@@ -39,7 +39,7 @@
       register: disks
       
     - debug:
-        var: "{{ disks | from_json | list }}"
+        var: ansible_facts.disks.item.physical_disk_device_id 
 
 ###
 
