@@ -33,14 +33,15 @@
       when:
           - item.partition_style == 'RAW'
           - item.friendly_name == 'VMware Virtual disk'
+      set_fact: my_device_id='{{ item.physical_disk.device_id }}'    
+      register: my_device_id_list
       loop: "{{ ansible_facts.disks }}"
       loop_control:
           label: "{{ item.unique_id }}"
-      register: disks
       
     - debug:
         # var: ansible_facts.disks[1].physical_disk.device_id
-        var: disks[1].physical_disk.device_id
+        var: my_device_id_list
 
 
 
