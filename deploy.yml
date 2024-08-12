@@ -40,7 +40,7 @@
       
     - debug:
         # var: ansible_facts.disks[1].physical_disk.device_id
-        var: disks.physical_disk.device_id
+        var: disks[1].physical_disk.device_id
 
 
 
