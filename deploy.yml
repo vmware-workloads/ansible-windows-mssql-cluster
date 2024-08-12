@@ -68,7 +68,7 @@
     - name: Get device IDs
       set_fact:
         device_id_list: "{{ device_id_list | default([]) + [item.physical_disk.device_id] }}"
-       when:
+      when:
             - item.partition_style == 'RAW'
             - item.friendly_name == 'VMware Virtual disk'     
       loop: "{{ ansible_facts.disks }}"  
