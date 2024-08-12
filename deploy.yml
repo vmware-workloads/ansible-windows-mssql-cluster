@@ -63,7 +63,7 @@
         drive_letter: "{{ item.value }}"
         partition_size: -1
         register: partition_result
-        loop: "{{ drive_mapping | dict2items }}"   
+      loop: "{{ drive_mapping | dict2items }}"   
 
     - name: Format disks
       community.windows.win_format:
