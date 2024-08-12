@@ -44,11 +44,6 @@
 
     - name: Set variables
       set_fact:
-        start_letter: "d"
-
-
-    - name: Create drive mapping dictionary
-      set_fact:
         letters:
           - d
           - e
@@ -63,6 +58,10 @@
           - n
           - o
           - p
+
+
+    - name: Create drive mapping dictionary
+      set_fact:
         drive_mapping: "{{ dict(disk_names | zip( letters | map('chr'))) }}"
 
     - name: Display the drive mapping
