@@ -65,13 +65,17 @@
       set_fact:
         disk_mapping: "{{ dict(disk_names | zip(letters)) }}"
 
-    - name: Create drive letter disk name dict
-      set_fact:
-        drive_mapping: "{{ dict(item.physical_disk.device_id | zip(letters)) }}"
+    - name: Get device IDs
+      set_fact: device_id: "{{ item.physical_disk.device_id }}"
+      register: device_id_list
       # when:
       #     - item.partition_style == 'RAW'
       #     - item.friendly_name == 'VMware Virtual disk'     
       loop: "{{ ansible_facts.disks }}"     
+
+    - name: Create drive letter disk name dict 
+      set_fact:
+        drive_mapping: "{{ dict( device_id_list.results | zip(letters)) }}"
 
     - debug:
         # var: ansible_facts.disks[1].physical_disk.device_id
