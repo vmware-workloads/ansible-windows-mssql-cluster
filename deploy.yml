@@ -44,7 +44,6 @@
 
     - name: Set variables
       set_fact:
-        disk_names: "{{ ansible_facts.disks | map(attribute='label') | list }}"
         start_letter: "d"
         drive_count: 3
         start_uni: "{{ start_letter | ord }}"
