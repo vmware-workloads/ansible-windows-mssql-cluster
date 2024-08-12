@@ -71,9 +71,11 @@
     - name: Partition the drives
       community.windows.win_partition:
         drive_letter: "{{ item.value }}"
-        disk_number: "{{ item }}"
+        disk_number: "{{ index+1 }}"
         partition_size: -1
       loop: "{{ drive_mapping | dict2items }}"   
+      loop_control:
+        index_var: index
       register: partition_result
 
     - name: Format disks
