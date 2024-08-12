@@ -49,7 +49,20 @@
 
     - name: Create drive mapping dictionary
       set_fact:
-        letters="[ 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']"
+        letters:
+          - d
+          - e
+          - f
+          - g
+          - h
+          - i
+          - j
+          - k
+          - l
+          - m
+          - n
+          - o
+          - p
         drive_mapping: "{{ dict(disk_names | zip( letters | map('chr')))) }}"
 
     - name: Display the drive mapping
