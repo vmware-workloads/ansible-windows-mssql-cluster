@@ -51,7 +51,7 @@
 
     - name: Create drive mapping dictionary
       set_fact:
-        drive_mapping: "{{ dict(disk_names | zip((range(ord(start_letter) + 1, ord(start_letter) + len(disk_names) | map('chr')))) }}"
+        drive_mapping: "{{ dict(disk_names | zip((range(ord(start_letter) + 1, ord(start_letter) + len(disk_names)) | map('chr')))) }}"
 
     - name: Display the drive mapping
       debug:
