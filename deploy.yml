@@ -66,17 +66,17 @@
         drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
 
     - name: Get device IDs
-      set_fact: device_id="{{ item.physical_disk.device_id }}"
-      with_items: "{{ item.physical_disk.device_id }}"
+      set_fact:
+        device_id_list: "{{ device_id_list | default([]) + [item.physical_disk.device_id] }}"
       # when:
       #     - item.partition_style == 'RAW'
       #     - item.friendly_name == 'VMware Virtual disk'     
       loop: "{{ ansible_facts.disks }}"
-      register: device_id_list     
+      # register: device_id_list     
 
     - name: Display the device id list
       debug:
-        var: device_id_list.ansible_facts.device_id
+        var: device_id_list
 
     - name: Create drive letter disk name dict 
       set_fact:
