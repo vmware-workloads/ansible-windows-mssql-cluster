@@ -38,8 +38,8 @@
           label: "{{ item.unique_id }}"
       register: disk_number
       
-      - debug:
-          var: disk_number    
+    - debug:
+        var: disk_number    
 
 ###
 
