@@ -37,17 +37,6 @@
       loop_control:
           label: "{{ item.unique_id }}"
 
-    - name: Gather Device IDs
-      set_fact: my_device_id='{{ item.physical_disk.device_id }}'    
-      register: my_device_id_list
-      when:
-          - item.partition_style == 'RAW'
-          - item.friendly_name == 'VMware Virtual disk'     
-      loop: "{{ ansible_facts.disks }}"    
-      
-    - debug:
-        # var: ansible_facts.disks[1].physical_disk.device_id
-        var: my_device_id
 
 
 
@@ -72,9 +61,21 @@
           - p
 
 
-    - name: Create drive mapping dictionary
+    - name: Create drive letter device id dict
       set_fact:
-        drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
+        disk_mapping: "{{ dict(disk_names | zip(letters)) }}"
+
+    - name: Create drive letter disk name dict
+      set_fact:
+        drive_mapping: "{{ dict(item.physical_disk.device_id | zip(letters)) }}"
+      when:
+          - item.partition_style == 'RAW'
+          - item.friendly_name == 'VMware Virtual disk'     
+      loop: "{{ ansible_facts.disks }}"     
+
+    - debug:
+        # var: ansible_facts.disks[1].physical_disk.device_id
+        var: drive_mapping    
 
     - name: Display the drive mapping
       debug:
