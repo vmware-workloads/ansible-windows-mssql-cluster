@@ -71,6 +71,7 @@
     - name: Partition the drives
       community.windows.win_partition:
         drive_letter: "{{ item.value }}"
+        disk_number: "{{ item.number }}"
         partition_size: -1
       loop: "{{ drive_mapping | dict2items }}"   
       register: partition_result
