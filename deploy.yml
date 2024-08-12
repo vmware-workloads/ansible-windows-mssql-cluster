@@ -39,7 +39,7 @@
       register: disks
       
     - debug:
-        var: disks.physical_disk.device_id
+        var: disks
 
 ###
 
