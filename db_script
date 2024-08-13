@@ -171,19 +171,20 @@ GO
 
 :r $(TEMP)\primary.temp
 
+USE [master]
+
+GO
+
+CREATE ENDPOINT [Hadr_endpoint] 
+	AS TCP (LISTENER_PORT = 5022)
+	FOR DATA_MIRRORING (ROLE = ALL, ENCRYPTION = REQUIRED ALGORITHM AES)
+
+GO
+
 IF (SELECT state FROM sys.endpoints WHERE name = N'Hadr_endpoint') <> 0
 BEGIN
 	ALTER ENDPOINT [Hadr_endpoint] STATE = STARTED
 END
-
-
-GO
-
-use [master]
-
-GO
-
-GRANT CONNECT ON ENDPOINT::[Hadr_endpoint] TO [NT Service\MSSQLSERVER]
 
 GO
 
@@ -202,19 +203,21 @@ GO
 
 :r $(TEMP)\secondary.temp 
 
+USE [master]
+
+GO
+
+CREATE ENDPOINT [Hadr_endpoint] 
+	AS TCP (LISTENER_PORT = 5022)
+	FOR DATA_MIRRORING (ROLE = ALL, ENCRYPTION = REQUIRED ALGORITHM AES)
+
+GO
+
 IF (SELECT state FROM sys.endpoints WHERE name = N'Hadr_endpoint') <> 0
 BEGIN
 	ALTER ENDPOINT [Hadr_endpoint] STATE = STARTED
 END
 
-
-GO
-
-use [master]
-
-GO
-
-GRANT CONNECT ON ENDPOINT::[Hadr_endpoint] TO [NT Service\MSSQLSERVER]
 
 GO
 
@@ -289,11 +292,11 @@ GO
 
 :r $(TEMP)\secondary.temp 
 
-ALTER AVAILABILITY GROUP [myAG] JOIN;
+ALTER AVAILABILITY GROUP [MyAG] JOIN;
 
 GO
 
-ALTER AVAILABILITY GROUP [myAG] GRANT CREATE ANY DATABASE;
+ALTER AVAILABILITY GROUP [MyAG] GRANT CREATE ANY DATABASE;
 
 GO
 

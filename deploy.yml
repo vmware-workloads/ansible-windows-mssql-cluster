@@ -6,9 +6,22 @@
   vars:
     ansible_connection: ssh
     ansible_shell_type: powershell
-    start_letter: 'E'
+    start_letter: 'e'
+    letter_list: >-
+      {%- set start = start_letter | ord %}
+      {%- set end = end_letter | ord %}
+      {%- set letters = (start..end) | map('chr') | list %}
+      {%- if letters[0] == start_letter %}
+        {{ letters }}
+      {%- else %}
+        {{ [] }}
+      {%- endif %}
 
   tasks:
+
+    - name: Print the letter list
+      debug:
+        msg: "{{ letter_list }}"
 
     - name: Borrow IP address from Adapter 2 from the first host
       run_once: true
@@ -27,26 +40,9 @@
     - name: Get disk facts from Windows hosts
       community.windows.win_disk_facts:
 
-    # - name: Initialize disks
-    #   community.windows.win_initialize_disk:
-    #     disk_number: "{{ item.number }}"
-    #   when:
-    #       - item.partition_style == 'RAW'
-    #       - item.friendly_name == 'VMware Virtual disk'
-    #   loop: "{{ ansible_facts.disks }}"
-    #   loop_control:
-    #       label: "{{ item.unique_id }}"
-
-
-
-
-###
-
-
     - name: Set variables
       set_fact:
         letters: ['e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-
 
     - name: Create drive letter device id dict
       set_fact:
@@ -76,12 +72,10 @@
       debug:
         var: drive_mapping
 
-
     - name: Initialize disks
       community.windows.win_initialize_disk:
         disk_number: "{{ item }}"
       loop: "{{ device_id_list }}"
-
 
     - name: Partition the drives
       community.windows.win_partition:
@@ -101,35 +95,6 @@
         allocation_unit_size: 65536
       loop: "{{ drive_mapping | dict2items }}"   
       register: format_result
-
-
-
-###
-
-    # - name: Partition disks
-    #   community.windows.win_partition:
-    #     drive_letter: "{{ item.letter }}"
-    #     disk_number: "{{ item.number }}"
-    #     partition_size: -1
-    #   loop:
-    #     - {letter: 'E', number: 1 }
-    #     - {letter: 'F', number: 2 }
-    #     - {letter: 'G', number: 3 }
-
-    # - name: Format disks
-    #   community.windows.win_format:
-    #     drive_letter: "{{ item.letter }}"
-    #     file_system: NTFS
-    #     new_label: "{{ item.label }}"
-    #     allocation_unit_size: 65536
-    #   loop:
-    #     - {letter: 'E', label: "{{ disk_names[0] }}" }
-    #     - {letter: 'F', label: "{{ disk_names[1] }}" }
-    #     - {letter: 'G', label: "{{ disk_names[2] }}" } 
-
-###
-        
-
 
     - name: Install Failover-Clustering with sub features and management tools
       ansible.windows.win_feature:
@@ -191,7 +156,17 @@
         direction: in
         protocol: tcp
         state: present
-        enabled: yes    
+        enabled: yes 
+
+    - name: Firewall rule to allow SQL AG Endpoint on TCP port 5022
+      community.windows.win_firewall_rule:
+        name: AG-Endpoint
+        localport: 5022
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes               
 
     - name: Reboot
       ansible.windows.win_reboot:
@@ -232,30 +207,26 @@
         Restart-Service MSSQLSERVER
 
 
+    # - name: Set drive/folder permissions for the sql service
+    #   ansible.windows.win_acl:
+    #     user: NT Service\MSSQLSERVER
+    #     path: "{{ item.path }}"
+    #     rights: FullControl
+    #     type: allow
+    #     state: present
+    #   loop:
+    #     - { path: 'E:\' }
+    #     - { path: 'F:\' }
+    #     - { path: 'G:\' }
+
     - name: Set drive/folder permissions for the sql service
       ansible.windows.win_acl:
         user: NT Service\MSSQLSERVER
-        path: "{{ item.path }}"
+        path: "{{ item.value + ':\\' }}"
         rights: FullControl
         type: allow
         state: present
-      loop:
-        - { path: 'E:\' }
-        - { path: 'F:\' }
-        - { path: 'G:\' }
-
-    # - name: Set ACL for NT SERVICE\MSSQLSERVER
-    #   ansible.windows.win_acl:
-    #     path: "{{ item.1 }}:\\"
-    #     user: 'NT SERVICE\MSSQLSERVER'
-    #     permission: full
-    #     type: allow
-    #   loop: "{{ disk_letter_mapping | dict2items | map(attribute='value') | enumerate(start=1) }}"
-    #   register: acl_results
-
-    # - name: Print ACL results
-    #   debug:
-    #     var: acl_results
+      loop: "{{ drive_mapping | dict2items }}"        
 
 
     - name: Run DB script on first host
