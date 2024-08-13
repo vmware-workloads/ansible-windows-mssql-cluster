@@ -11,11 +11,14 @@
 
   tasks:
 
-    - name: Create a list of letters from e to z
+    - name: Generate letters using Python script
+      command: python3 -c "import string; print(' '.join([c for c in string.ascii_lowercase if 'e' <= c <= 'z']))"
+      register: result
+
+    - name: Set letter list
       set_fact:
-        letter_list: "{{ letter_list | default([]) + [item] }}"
-      loop: "{{ range(ord('e'), ord('z') + 1) | map('chr') | list }}"
-      
+        letter_list: "{{ result.stdout.split() }}"
+
     - name: Print the letter list
       debug:
         msg: "{{ letter_list }}"
@@ -45,7 +48,7 @@
       set_fact:
         drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
 
-    - name: Get device IDs
+    - name: Get device IDs for raw virt disks
       set_fact:
         device_id_list: "{{ device_id_list | default([]) + [item.physical_disk.device_id] }}"
       when:
