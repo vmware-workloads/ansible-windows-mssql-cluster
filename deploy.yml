@@ -11,10 +11,11 @@
 
   tasks:
 
-    - name: Generate the letter range
+    - name: Create a list of letters from e to z
       set_fact:
-        letter_list: "{{ (['e'..'z'] | list) }}"
-
+        letter_list: "{{ letter_list | default([]) + [item] }}"
+      loop: "{{ range(ord('e'), ord('z') + 1) | map('chr') | list }}"
+      
     - name: Print the letter list
       debug:
         msg: "{{ letter_list }}"
