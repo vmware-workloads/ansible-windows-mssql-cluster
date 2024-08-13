@@ -6,22 +6,10 @@
   vars:
     ansible_connection: ssh
     ansible_shell_type: powershell
-    start_letter: 'e'
+    letters: ['e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 
 
   tasks:
-
-    - name: Generate letters using Python script
-      command: python3 -c "import string; print(' '.join([c for c in string.ascii_lowercase if 'e' <= c <= 'z']))"
-      register: result
-
-    - name: Set letter list
-      set_fact:
-        letter_list: "{{ result.stdout.split() }}"
-
-    - name: Print the letter list
-      debug:
-        msg: "{{ letter_list }}"
 
     - name: Borrow IP address from Adapter 2 from the first host
       run_once: true
@@ -40,9 +28,6 @@
     - name: Get disk facts from Windows hosts
       community.windows.win_disk_facts:
 
-    - name: Set variables
-      set_fact:
-        letters: ['e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 
     - name: Create drive letter device id dict
       set_fact:
