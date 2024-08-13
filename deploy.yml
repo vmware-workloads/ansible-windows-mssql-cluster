@@ -4,9 +4,17 @@
 
 
   vars:
+    
     ansible_connection: ssh
     ansible_shell_type: powershell
+
+ # It would be nice if we could programatically define this list of letters
+ # in python you can use the ord() and char() functions to convert into ascii codes
+ # and numerically iterate. However, Ansible doesn't nativley implement these fns 
+ # so this is the easiest way...
+
     letters: ['e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+
 
 
   tasks:
@@ -231,7 +239,7 @@
 
 
 
-# Now setup Windows Clustering
+# Now setup Windows Clustering, using the IP we stored from the extra adapter earlier
 
     - name: Collect IP addresses from each host
       set_fact:
