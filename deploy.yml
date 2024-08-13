@@ -7,17 +7,13 @@
     ansible_connection: ssh
     ansible_shell_type: powershell
     start_letter: 'e'
-    letter_list: >-
-      {%- set start = start_letter | ord %}
-      {%- set end = end_letter | ord %}
-      {%- set letters = (start..end) | map('chr') | list %}
-      {%- if letters[0] == start_letter %}
-        {{ letters }}
-      {%- else %}
-        {{ [] }}
-      {%- endif %}
+
 
   tasks:
+
+    - name: Generate the letter range
+      set_fact:
+        letter_list: "{{ (['e'..'z'] | list) }}"
 
     - name: Print the letter list
       debug:
