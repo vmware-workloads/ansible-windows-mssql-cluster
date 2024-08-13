@@ -27,15 +27,15 @@
     - name: Get disk facts from Windows hosts
       community.windows.win_disk_facts:
 
-    - name: Initialize disks
-      community.windows.win_initialize_disk:
-        disk_number: "{{ item.number }}"
-      when:
-          - item.partition_style == 'RAW'
-          - item.friendly_name == 'VMware Virtual disk'
-      loop: "{{ ansible_facts.disks }}"
-      loop_control:
-          label: "{{ item.unique_id }}"
+    # - name: Initialize disks
+    #   community.windows.win_initialize_disk:
+    #     disk_number: "{{ item.number }}"
+    #   when:
+    #       - item.partition_style == 'RAW'
+    #       - item.friendly_name == 'VMware Virtual disk'
+    #   loop: "{{ ansible_facts.disks }}"
+    #   loop_control:
+    #       label: "{{ item.unique_id }}"
 
 
 
@@ -45,20 +45,7 @@
 
     - name: Set variables
       set_fact:
-        letters:
-          - d
-          - e
-          - f
-          - g
-          - h
-          - i
-          - j
-          - k
-          - l
-          - m
-          - n
-          - o
-          - p
+        letters: ['e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 
 
     - name: Create drive letter device id dict
@@ -89,10 +76,17 @@
       debug:
         var: drive_mapping
 
+
+    - name: Initialize disks
+      community.windows.win_initialize_disk:
+        disk_number: "{{ item }}"
+      loop: "{{ device_id_list }}"
+
+
     - name: Partition the drives
       community.windows.win_partition:
         drive_letter: "{{ item.value }}"
-        disk_number: "{{ index }}"
+        disk_number: "{{ item.key }}"
         partition_size: -1
       loop: "{{ disk_mapping | dict2items }}"   
       loop_control:
