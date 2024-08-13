@@ -11,6 +11,12 @@
 
   tasks:
 
+
+# Store the extra IP address assigned from VCF Automation for use later to create the cluster
+# We 'take' this from the extra network adapter configured 
+# And then remove the IP address configured there
+# This is 'safe' as VCF Automation still has the IP assigned to this deployment
+
     - name: Borrow IP address from Adapter 2 from the first host
       run_once: true
       ansible.windows.win_shell: |
@@ -21,17 +27,34 @@
       ansible.windows.win_shell: |
         Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false  
 
+
+# Make sure the first adapter is primary, important for the cluster creation later
+
     - name: Ensure Adapter 0 is set to Primary
       ansible.windows.win_shell: |
         Set-NetIPInterface -InterfaceAlias 'Ethernet0' -InterfaceMetric 0
+
+
+
+# Now initalize, partition and format the disks
+# First get the latest info from the hosts
 
     - name: Get disk facts from Windows hosts
       community.windows.win_disk_facts:
 
 
+# Then we create a mapping between the drive letters and disk names passed in from VCF         
+
     - name: Create drive letter device id dict
       set_fact:
         drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
+
+
+# Scan the output of the disk information gathered above to get the
+# disks that are RAW and type VMware Virtual Disk
+# this should be the disks that have been created by VCF Automation
+# We could tweak this to make it more certain that they are indeed
+# the correct drives, but this should be a sound assumption
 
     - name: Get device IDs for raw virt disks
       set_fact:
@@ -45,6 +68,17 @@
       debug:
         var: device_id_list
 
+
+# Next, we create a dictionary with the device IDs (for our expected drives)
+# and the disk letters. The size of this will be limited by the number of 
+# disks found
+# Thus we'll have two dictionaries, implicitly the same size (as they are based
+# on the input names from VCF Automation)
+#
+# disk mapping -- for device IDs/letters <-- used to init & partition disks 
+# drive mapping -- for disk names/letters <-- used to format the drives with the correct label
+# In theory we could merge these...       
+
     - name: Create drive letter disk name dict 
       set_fact:
         disk_mapping: "{{ dict( device_id_list | zip(letters)) }}"
@@ -57,10 +91,16 @@
       debug:
         var: drive_mapping
 
+
+# Itterate over the device IDs to init the disks
+
     - name: Initialize disks
       community.windows.win_initialize_disk:
         disk_number: "{{ item }}"
       loop: "{{ device_id_list }}"
+
+
+# Partition the drives with the appropriate drive letter
 
     - name: Partition the drives
       community.windows.win_partition:
@@ -72,6 +112,9 @@
         index_var: index
       register: partition_result
 
+
+# Format the disks with the labels defined from VCF Automation
+
     - name: Format disks
       community.windows.win_format:
         drive_letter: "{{ item.value }}"
@@ -80,6 +123,11 @@
         allocation_unit_size: 65536
       loop: "{{ drive_mapping | dict2items }}"   
       register: format_result
+
+
+
+# In the next section we do some basic setup on the VMs and
+# install Choco and then MS SQL and MGMT tools
 
     - name: Install Failover-Clustering with sub features and management tools
       ansible.windows.win_feature:
@@ -97,7 +145,7 @@
       ansible.windows.win_reboot: 
 
     - name: Configure MultiPath IO
-      ansible.windows.win_shell: | 
+      ansible.windows.win_shell: |
         Enable-MSDSMAutomaticClaim -BusType iSCSI
         Set-MPIOSetting -CustomPathRecovery Enabled -NewPathRecoveryInterval 20 -NewRetryCount 60 -NewPDORemovePeriod 60 -NewPathVerificationPeriod 30 -NewDiskTimeout 60
 
@@ -114,11 +162,13 @@
       register: result
       until: result.rc == 0  
 
-
     - name: Install SQL Mgmt Tools
       win_chocolatey:
         name: sql-server-management-studio
         state: present   
+
+
+# We now setup TCP & firewall for SQL
 
     - name: Enable TCP and Named Pipes for SQL
       ansible.windows.win_shell: |
@@ -156,15 +206,20 @@
     - name: Reboot
       ansible.windows.win_reboot:
 
+
+# Now, configure iSCSI...        
+
     - name: Start iSCSI Service + Set to Auto Start
       ansible.windows.win_service:
         name: MSiSCSI
         start_mode: auto
         state: started   
 
+# Use the IQN from VCF Automation to make sure we have the right LUNs
+
     - name: Configure iSCSI Target + LUNs
       ignore_errors: true
-      ansible.windows.win_shell: | 
+      ansible.windows.win_shell: |
         New-IscsiTargetPortal -TargetPortalAddress "{{ iscsi_share.IP }}"
         Get-IscsiTarget | Where NodeAddress -eq "{{ iscsi_share.vSAN_iSCSI_iqn }}" | Connect-IscsiTarget
 
@@ -174,6 +229,9 @@
       ansible.windows.win_shell: |
         Get-Disk | where FriendlyName -eq "Vmware Virtual SAN" | Initialize-Disk -PartitionStyle GPT -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume -FileSystem NTFS      
 
+
+
+# Now setup Windows Clustering
 
     - name: Collect IP addresses from each host
       set_fact:
@@ -187,22 +245,14 @@
         new-cluster -Name {{ 'sql_cluster' + '-' + deployment_id }} -Node $my_ip_list -AdministrativeAccessPoint Dns -StaticAddress {{ cluster_ip.stdout }}
 
     - name: Enable AlwaysOn Avail Groups
-      ansible.windows.win_shell: | 
+      ansible.windows.win_shell: |
         foreach ($node in Get-ClusterNode) {Enable-SqlAlwaysOn -ServerInstance $node -Force}  
         Restart-Service MSSQLSERVER
 
 
-    # - name: Set drive/folder permissions for the sql service
-    #   ansible.windows.win_acl:
-    #     user: NT Service\MSSQLSERVER
-    #     path: "{{ item.path }}"
-    #     rights: FullControl
-    #     type: allow
-    #     state: present
-    #   loop:
-    #     - { path: 'E:\' }
-    #     - { path: 'F:\' }
-    #     - { path: 'G:\' }
+# We let the SQL serivce access the drives we've created.
+# As we're not in production, this will do for now, but ideally
+# we should create a separate user for SQL, etc.
 
     - name: Set drive/folder permissions for the sql service
       ansible.windows.win_acl:
@@ -213,6 +263,8 @@
         state: present
       loop: "{{ drive_mapping | dict2items }}"        
 
+
+# Finally, we run the SQL script as passed in from VCF Automation
 
     - name: Run DB script on first host
       run_once: true
