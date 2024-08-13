@@ -207,7 +207,7 @@
     - name: Set drive/folder permissions for the sql service
       ansible.windows.win_acl:
         user: NT Service\MSSQLSERVER
-        path: "{{ item.value + ':\\' }}"
+        path: "{{ item.value + ':\' }}"
         rights: FullControl
         type: allow
         state: present
