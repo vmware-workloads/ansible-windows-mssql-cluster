@@ -8,10 +8,10 @@
     ansible_connection: ssh
     ansible_shell_type: powershell
 
- # It would be nice if we could programatically define this list of letters
- # in python you can use the ord() and char() functions to convert into ascii codes
- # and numerically iterate. However, Ansible doesn't nativley implement these fns 
- # so this is the easiest way...
+    # It would be nice if we could programatically define this list of letters
+    # in python you can use the ord() and char() functions to convert into ascii codes
+    # and numerically iterate. However, Ansible doesn't nativley implement these fns 
+    # so this is the easiest way...
 
     letters: ['e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 
@@ -19,11 +19,10 @@
 
   tasks:
 
-
-# Store the extra IP address assigned from VCF Automation for use later to create the cluster
-# We 'take' this from the extra network adapter configured 
-# And then remove the IP address configured there
-# This is 'safe' as VCF Automation still has the IP assigned to this deployment
+    # Store the extra IP address assigned from VCF Automation for use later to create the cluster
+    # We 'take' this from the extra network adapter configured 
+    # And then remove the IP address configured there
+    # This is 'safe' as VCF Automation still has the IP assigned to this deployment
 
     - name: Borrow IP address from Adapter 2 from the first host
       run_once: true
@@ -36,7 +35,7 @@
         Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false  
 
 
-# Make sure the first adapter is primary, important for the cluster creation later
+    # Make sure the first adapter is primary, important for the cluster creation later
 
     - name: Ensure Adapter 0 is set to Primary
       ansible.windows.win_shell: |
@@ -44,25 +43,25 @@
 
 
 
-# Now initalize, partition and format the disks
-# First get the latest info from the hosts
+    # Now initalize, partition and format the disks
+    # First get the latest info from the hosts
 
     - name: Get disk facts from Windows hosts
       community.windows.win_disk_facts:
 
 
-# Then we create a mapping between the drive letters and disk names passed in from VCF         
+    # Then we create a mapping between the drive letters and disk names passed in from VCF         
 
     - name: Create drive letter device id dict
       set_fact:
         drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
 
 
-# Scan the output of the disk information gathered above to get the
-# disks that are RAW and type VMware Virtual Disk
-# this should be the disks that have been created by VCF Automation
-# We could tweak this to make it more certain that they are indeed
-# the correct drives, but this should be a sound assumption
+    # Scan the output of the disk information gathered above to get the
+    # disks that are RAW and type VMware Virtual Disk
+    # this should be the disks that have been created by VCF Automation
+    # We could tweak this to make it more certain that they are indeed
+    # the correct drives, but this should be a sound assumption
 
     - name: Get device IDs for raw virt disks
       set_fact:
@@ -77,15 +76,15 @@
         var: device_id_list
 
 
-# Next, we create a dictionary with the device IDs (for our expected drives)
-# and the disk letters. The size of this will be limited by the number of 
-# disks found
-# Thus we'll have two dictionaries, implicitly the same size (as they are based
-# on the input names from VCF Automation)
-#
-# disk mapping -- for device IDs/letters <-- used to init & partition disks 
-# drive mapping -- for disk names/letters <-- used to format the drives with the correct label
-# In theory we could merge these...       
+    # Next, we create a dictionary with the device IDs (for our expected drives)
+    # and the disk letters. The size of this will be limited by the number of 
+    # disks found
+    # Thus we'll have two dictionaries, implicitly the same size (as they are based
+    # on the input names from VCF Automation)
+    #
+    # disk mapping -- for device IDs/letters <-- used to init & partition disks 
+    # drive mapping -- for disk names/letters <-- used to format the drives with the correct label
+    # In theory we could merge these...       
 
     - name: Create drive letter disk name dict 
       set_fact:
@@ -100,7 +99,7 @@
         var: drive_mapping
 
 
-# Itterate over the device IDs to init the disks
+    # Itterate over the device IDs to init the disks
 
     - name: Initialize disks
       community.windows.win_initialize_disk:
@@ -108,7 +107,7 @@
       loop: "{{ device_id_list }}"
 
 
-# Partition the drives with the appropriate drive letter
+    # Partition the drives with the appropriate drive letter
 
     - name: Partition the drives
       community.windows.win_partition:
@@ -121,7 +120,7 @@
       register: partition_result
 
 
-# Format the disks with the labels defined from VCF Automation
+    # Format the disks with the labels defined from VCF Automation
 
     - name: Format disks
       community.windows.win_format:
@@ -134,8 +133,8 @@
 
 
 
-# In the next section we do some basic setup on the VMs and
-# install Choco and then MS SQL and MGMT tools
+    # In the next section we do some basic setup on the VMs and
+    # install Choco and then MS SQL and MGMT tools
 
     - name: Install Failover-Clustering with sub features and management tools
       ansible.windows.win_feature:
@@ -176,7 +175,7 @@
         state: present   
 
 
-# We now setup TCP & firewall for SQL
+    # We now setup TCP & firewall for SQL
 
     - name: Enable TCP and Named Pipes for SQL
       ansible.windows.win_shell: |
@@ -215,7 +214,7 @@
       ansible.windows.win_reboot:
 
 
-# Now, configure iSCSI...        
+    # Now, configure iSCSI...        
 
     - name: Start iSCSI Service + Set to Auto Start
       ansible.windows.win_service:
@@ -223,7 +222,7 @@
         start_mode: auto
         state: started   
 
-# Use the IQN from VCF Automation to make sure we have the right LUNs
+    # Use the IQN from VCF Automation to make sure we have the right LUNs
 
     - name: Configure iSCSI Target + LUNs
       ignore_errors: true
@@ -239,7 +238,7 @@
 
 
 
-# Now setup Windows Clustering, using the IP we stored from the extra adapter earlier
+    # Now setup Windows Clustering, using the IP we stored from the extra adapter earlier
 
     - name: Collect IP addresses from each host
       set_fact:
@@ -258,9 +257,9 @@
         Restart-Service MSSQLSERVER
 
 
-# We let the SQL serivce access the drives we've created.
-# As we're not in production, this will do for now, but ideally
-# we should create a separate user for SQL, etc.
+    # We let the SQL serivce access the drives we've created.
+    # As we're not in production, this will do for now, but ideally
+    # we should create a separate user for SQL, etc.
 
     - name: Set drive/folder permissions for the sql service
       ansible.windows.win_acl:
@@ -272,7 +271,7 @@
       loop: "{{ drive_mapping | dict2items }}"        
 
 
-# Finally, we run the SQL script as passed in from VCF Automation
+    # Finally, we run the SQL script as passed in from VCF Automation
 
     - name: Run DB script on first host
       run_once: true
