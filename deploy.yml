@@ -265,6 +265,7 @@
    # Setup a shared disk, maps to 'C:\ClusterStorage\Volume1' on each node
 
     - name: Create cluster shared disk
+      run_once: true    
       ansible.windows.win_shell: |
         Add-ClusterSharedVolume –Name "Cluster Disk 2"    
       
