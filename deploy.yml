@@ -257,6 +257,13 @@
         Restart-Service MSSQLSERVER
 
 
+   # Setup a shared disk, maps to 'C:\ClusterStorage\Volume1' on each node
+
+    - name: Create cluster shared disk
+      ansible.windows.win_shell: |
+        Add-ClusterSharedVolume –Name "Cluster Disk 2"    
+      
+
     # We let the SQL serivce access the drives we've created.
     # As we're not in production, this will do for now, but ideally
     # we should create a separate user for SQL, etc.
