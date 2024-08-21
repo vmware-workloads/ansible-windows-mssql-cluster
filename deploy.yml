@@ -142,6 +142,11 @@
         state: present
         include_sub_features: true
         include_management_tools: true
+        
+    - name: Explicitly ensure failover clustering mgmt tools are installed
+      ignore_errors: true
+      ansible.windows.win_shell: |
+        Install-WindowsFeature -name FailOver-Clustering -IncludeManagementTools       
 
     - name: Install Multipath IO
       ansible.windows.win_feature:
