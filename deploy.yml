@@ -132,10 +132,14 @@
       register: format_result
 
 
+   # 
+   # In the next section we do some basic setup on the VMs and
+   # install Choco and then MS SQL and MGMT tools
+   #
 
-    # In the next section we do some basic setup on the VMs and
-    # install Choco and then MS SQL and MGMT tools
 
+   # Install Failover cluster feature + tools
+   
     - name: Install Failover-Clustering with sub features and management tools
       ansible.windows.win_feature:
         name: Failover-Clustering
@@ -143,10 +147,16 @@
         include_sub_features: true
         include_management_tools: true
         
+   # This shouldn't be needed, but sometimes failover clustering tools are
+   # not installed by ansible.windows.win_feature     
+        
     - name: Explicitly ensure failover clustering mgmt tools are installed
       ignore_errors: true
       ansible.windows.win_shell: |
         Install-WindowsFeature -name FailOver-Clustering -IncludeManagementTools       
+
+
+   # Install MPIO and set up for iSCSI volumes
 
     - name: Install Multipath IO
       ansible.windows.win_feature:
@@ -161,9 +171,15 @@
         Enable-MSDSMAutomaticClaim -BusType iSCSI
         Set-MPIOSetting -CustomPathRecovery Enabled -NewPathRecoveryInterval 20 -NewRetryCount 60 -NewPDORemovePeriod 60 -NewPathVerificationPeriod 30 -NewDiskTimeout 60
 
+
+    # Get choco
+
     - name: Ensure Chocolatey itself is installed, using community repo for the bootstrap
       win_chocolatey:
         name: chocolatey   
+ 
+        
+   # Install the MS-SQL Server Dev Edition from the Choco catalogue      
      
     - name: Install SQL Server 2022
       win_chocolatey:
@@ -173,6 +189,9 @@
       delay: 3
       register: result
       until: result.rc == 0  
+      
+      
+    # Install SQL mamagement studio, etc.      
 
     - name: Install SQL Mgmt Tools
       win_chocolatey:
@@ -180,7 +199,7 @@
         state: present   
 
 
-    # We now setup TCP & firewall for SQL
+    # We now setup TCP/named pipes & firewall rules for SQL
 
     - name: Enable TCP and Named Pipes for SQL
       ansible.windows.win_shell: |
@@ -268,6 +287,8 @@
       run_once: true    
       ansible.windows.win_shell: |
         Add-ClusterSharedVolume –Name "Cluster Disk 2"    
+   
+      
       
 
     # We let the SQL serivce access the drives we've created.
