@@ -32,6 +32,7 @@ Broadly, the steps to prepare the image are as follows:
 
 * Upload image to VC. Create a new VM & Power on.
 * Launch a Remote Console to the VM
+* Install VM tools
 * Ensure the user 'Administrator' is enabled and a password is set
 * Enable remote desktop
 * Install Cloudbase Cloud-Init:
