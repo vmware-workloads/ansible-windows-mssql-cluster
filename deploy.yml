@@ -30,6 +30,7 @@
       ansible.windows.win_shell: |
         (Get-NetIPAddress -InterfaceAlias 'Ethernet2' | Where AddressFamily -eq "IPv4").IPAddress
       register: cluster_ip
+      when: cluster_ip is not defined
 
     - name: Remove borrowed IP from Adapter 2
       ansible.windows.win_shell: |
@@ -71,11 +72,13 @@
       when:
             - item.partition_style == 'RAW'
             - item.friendly_name == 'VMware Virtual disk'     
-      loop: "{{ ansible_facts.disks }}"  
+      loop: "{{ ansible_facts.disks }}"
+      when: device_id_list is defined
 
     - name: Display the device id list
       debug:
         var: device_id_list
+      when: device_id_list is defined  
 
 
     # Next, we create a dictionary with the device IDs (for our expected drives)
@@ -92,6 +95,7 @@
       set_fact:
         disk_mapping: "{{ dict( device_id_list | zip(letters)) }}"
         cacheable: true
+      when: device_id_list is defined  
 
     - name: Display the disk mapping
       debug:
@@ -108,6 +112,7 @@
       community.windows.win_initialize_disk:
         disk_number: "{{ item }}"
       loop: "{{ device_id_list }}"
+      when: device_id_list is defined
 
 
     # Partition the drives with the appropriate drive letter
