@@ -24,12 +24,34 @@
     # And then remove the IP address configured there
     # This is 'safe' as VCF Automation still has the IP assigned to this deployment
 
+    - name: Check if the IP file exists
+      stat:
+        path: "./host_ips/{{ inventory_hostname }}.txt"
+      delegate_to: localhost
+      register: ip_file_status
+
     - name: Borrow IP address from Adapter 2 from the first host
       run_once: true
       ansible.windows.win_shell: |
         (Get-NetIPAddress -InterfaceAlias 'Ethernet2' | Where AddressFamily -eq "IPv4").IPAddress
+      when: not ip_file_status.stat.exists
       register: cluster_ip
+
+    - name: Save the IP address to file
+      copy:
+        content: "{{ cluster_ip.stdout }}"
+        dest: "./cluster_ip/{{ inventory_hostname_cluster_ip }}.txt"
+      when: not ip_file_status.stat.exists
+      delegate_to: localhost
+
+    - name: Load saved IP address
+      set_fact:
+        cluster_ip: "{{ lookup('file', './cluster_ip/{{ inventory_hostname_cluster_ip }}.txt') }}"
       when: cluster_ip is not defined
+
+    - name: Use the saved IP address
+      debug:
+        msg: "Picked up cluster IP address for {{ inventory_hostname }} is {{ saved_ip }}"
 
     - name: Remove borrowed IP from Adapter 2
       ansible.windows.win_shell: |
