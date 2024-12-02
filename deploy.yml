@@ -179,10 +179,7 @@
       win_chocolatey:
         name: chocolatey   
 
-    - name: Reboot 
-      ansible.windows.win_reboot: 
-        
- 
+       
         
    # Install the MS-SQL Server Dev Edition from the Choco catalogue      
      
@@ -190,6 +187,7 @@
       win_chocolatey:
         name: sql-server-2022
         state: present
+        package_params: /SQLSYSADMINACCOUNTS:$env:COMPUTERNAME\$env:USER 
       retries: 3
       delay: 3
       register: result
