@@ -90,6 +90,7 @@
     - name: Create drive letter disk name dict 
       set_fact:
         disk_mapping: "{{ dict( device_id_list | zip(letters)) }}"
+        cacheable: true
 
     - name: Display the disk mapping
       debug:
