@@ -55,6 +55,7 @@
     - name: Create drive letter device id dict
       set_fact:
         drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
+        cacheable: true
 
 
     # Scan the output of the disk information gathered above to get the
@@ -177,6 +178,10 @@
     - name: Ensure Chocolatey itself is installed, using community repo for the bootstrap
       win_chocolatey:
         name: chocolatey   
+
+    - name: Reboot 
+      ansible.windows.win_reboot: 
+        
  
         
    # Install the MS-SQL Server Dev Edition from the Choco catalogue      
