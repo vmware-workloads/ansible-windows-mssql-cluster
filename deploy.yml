@@ -7,6 +7,7 @@
     
     ansible_connection: ssh
     ansible_shell_type: powershell
+    device_id_list: null
 
     # It would be nice if we could programatically define this list of letters
     # in python you can use the ord() and char() functions to convert into ascii codes
