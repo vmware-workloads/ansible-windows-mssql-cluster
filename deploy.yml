@@ -199,7 +199,7 @@
       win_chocolatey:
         name: sql-server-2022
         state: present
-        package_params: SQLSYSADMINACCOUNTS:"{{ computerName.stdout }}"\Administrator
+        package_params: SQLSYSADMINACCOUNTS:{{ computerName.stdout }}\Administrator
       retries: 3
       delay: 3
       register: result
