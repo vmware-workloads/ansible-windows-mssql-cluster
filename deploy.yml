@@ -124,6 +124,7 @@
       loop_control:
         index_var: index
       register: partition_result
+      when: partition_result is not defined      
 
 
     # Format the disks with the labels defined from VCF Automation
@@ -136,6 +137,7 @@
         allocation_unit_size: 65536
       loop: "{{ drive_mapping | dict2items }}"   
       register: format_result
+      when: format_result is not defined       
 
 
    # 
