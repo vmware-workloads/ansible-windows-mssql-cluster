@@ -1,0 +1,26 @@
+# We let the SQL serivce access the drives we've created.
+# As we're not in production, this will do for now, but ideally
+# we should create a separate user for SQL, etc.
+
+- name: Set drive/folder permissions for the sql service
+  ansible.windows.win_acl:
+    user: NT Service\MSSQLSERVER
+    path: "{{ item.value + ':\' }}"
+    rights: FullControl
+    type: allow
+    state: present
+  loop: "{{ drive_mapping | dict2items }}"        
+
+
+# Finally, we run the SQL script as passed in from VCF Automation
+
+
+- name: Save the db scipt to a file
+  win_copy:
+    content: "{{ db_script }}"
+    dest: db_script_path
+
+- name: Run DB script on first host
+  run_once: true
+  ansible.windows.win_shell: |
+    sqlcmd -S 127.0.0.1 -E -i "{{ db_script_path }}"

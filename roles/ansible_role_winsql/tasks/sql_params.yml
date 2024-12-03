@@ -1,0 +1,37 @@
+# We now setup TCP/named pipes & firewall rules for SQL
+
+- name: Enable TCP and Named Pipes for SQL
+  ansible.windows.win_shell: |
+    Import-Module -Name SQLPS
+    $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $hostname
+    $uri = "ManagedComputer[@Name='" + (get-item env:\computername).Value + "']/ServerInstance[@Name='MSSQLSERVER']/ServerProtocol[@Name='Tcp']"
+    $Tcp=$wmi.GetSmoObject($uri)
+    $Tcp.IsEnabled = $true
+    $Tcp.Alter()
+    $Np = $wmi.GetSmoObject($uri)
+    $Np.IsEnabled = $true
+    $Np.Alter()
+    $Np
+
+- name: Firewall rule to allow SQL Connections on TCP port 1433
+  community.windows.win_firewall_rule:
+    name: SQL-Remote
+    localport: SQL-Remote-port
+    action: allow
+    direction: in
+    protocol: tcp
+    state: present
+    enabled: yes 
+
+- name: Firewall rule to allow SQL AG Endpoint on TCP port 5022
+  community.windows.win_firewall_rule:
+    name: AG-Endpoint
+    localport: AG-Endpoint-port
+    action: allow
+    direction: in
+    protocol: tcp
+    state: present
+    enabled: yes               
+
+- name: Reboot
+  ansible.windows.win_reboot:

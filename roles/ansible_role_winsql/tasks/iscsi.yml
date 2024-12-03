@@ -1,0 +1,21 @@
+# Now, configure iSCSI...        
+
+- name: Start iSCSI Service + Set to Auto Start
+  ansible.windows.win_service:
+    name: MSiSCSI
+    start_mode: auto
+    state: started   
+
+# Use the IQN from VCF Automation to make sure we have the right LUNs
+
+- name: Configure iSCSI Target + LUNs
+  ignore_errors: true
+  ansible.windows.win_shell: |
+    New-IscsiTargetPortal -TargetPortalAddress "{{ iscsi_share.IP }}"
+    Get-IscsiTarget | Where NodeAddress -eq "{{ iscsi_share.vSAN_iSCSI_iqn }}" | Connect-IscsiTarget
+
+- name: Format iSCSI disks on First Host
+  run_once: true
+  ignore_errors: true
+  ansible.windows.win_shell: |
+    Get-Disk | where FriendlyName -eq "Vmware Virtual SAN" | Initialize-Disk -PartitionStyle GPT -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume -FileSystem NTFS      

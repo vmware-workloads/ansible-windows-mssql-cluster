@@ -1,0 +1,94 @@
+# Now initalize, partition and format the disks
+# First get the latest info from the hosts
+
+- name: Get disk facts from Windows hosts
+  community.windows.win_disk_facts:
+
+
+# Then we create a mapping between the drive letters and disk names passed in from VCF         
+
+- name: Create drive letter device id dict
+  set_fact:
+    drive_mapping: "{{ dict(disk_names | zip(letters)) }}"
+    cacheable: true
+
+
+# Scan the output of the disk information gathered above to get the
+# disks that are RAW and type VMware Virtual Disk
+# this should be the disks that have been created by VCF Automation
+# We could tweak this to make it more certain that they are indeed
+# the correct drives, but this should be a sound assumption
+
+- name: Get device IDs for raw virt disks
+  set_fact:
+    device_id_list: "{{ device_id_list | default([]) + [item.physical_disk.device_id] }}"
+  when:
+        - item.partition_style == 'RAW'
+        - item.friendly_name == 'VMware Virtual disk'     
+  loop: "{{ ansible_facts.disks }}"
+
+- name: Display the device id list
+  debug:
+    var: device_id_list
+  when: device_id_list is defined  
+
+
+# Next, we create a dictionary with the device IDs (for our expected drives)
+# and the disk letters. The size of this will be limited by the number of 
+# disks found
+# Thus we'll have two dictionaries, implicitly the same size (as they are based
+# on the input names from VCF Automation)
+#
+# disk mapping -- for device IDs/letters <-- used to init & partition disks 
+# drive mapping -- for disk names/letters <-- used to format the drives with the correct label
+# In theory we could merge these...       
+
+- name: Create drive letter disk name dict 
+  set_fact:
+    disk_mapping: "{{ dict( device_id_list | zip(letters)) }}"
+    cacheable: true
+  when: device_id_list is defined  
+
+- name: Display the disk mapping
+  debug:
+    var: disk_mapping   
+
+- name: Display the drive mapping
+  debug:
+    var: drive_mapping
+
+
+# Itterate over the device IDs to init the disks
+
+- name: Initialize disks
+  community.windows.win_initialize_disk:
+    disk_number: "{{ item }}"
+  loop: "{{ device_id_list }}"
+  when: device_id_list is defined
+
+
+# Partition the drives with the appropriate drive letter
+
+- name: Partition the drives
+  community.windows.win_partition:
+    drive_letter: "{{ item.value }}"
+    disk_number: "{{ item.key }}"
+    partition_size: -1
+  loop: "{{ disk_mapping | dict2items }}"   
+  loop_control:
+    index_var: index
+  register: partition_result
+  when: device_id_list is defined      
+
+
+# Format the disks with the labels defined from VCF Automation
+
+- name: Format disks
+  community.windows.win_format:
+    drive_letter: "{{ item.value }}"
+    file_system: NTFS
+    new_label: "{{ item.key }}"
+    allocation_unit_size: 65536
+  loop: "{{ drive_mapping | dict2items }}"   
+  register: format_result
+  when: device_id_list is defined   
