@@ -39,14 +39,13 @@
     - name: Create temporary file
       ansible.windows.win_tempfile:
         state: file
-        suffix: cluster_ip
         path: "%USERPROFILE%"       
       register: temp_file_path       
 
     - name: Save the IP address to file
       win_copy:
         content: "{{ cluster_ip.stdout }}"
-        dest: "{{ temp_file_path }}"
+        dest: temp_file_path
       when: not ip_file_status.stat.exists
 
     - name: Load saved IP address
