@@ -37,7 +37,7 @@
 
 - name: Disable Adapter 2
   ansible.windows.win_shell: |
-    Disable-NetAdapter -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false     
+    Disable-NetAdapter -InterfaceAlias 'Ethernet2'
 
 
 # Make sure the first adapter is primary, important for the cluster creation later
