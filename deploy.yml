@@ -47,13 +47,14 @@
         cluster_ip: "{{ lookup('file', temp_file_path) }}"
       when: cluster_ip is not defined
 
-    - name: Use the saved IP address
+    - name: Show cluster ip
       debug:
-        msg: "Picked up cluster IP address for {{ inventory_hostname }} is {{ saved_ip }}"
+        msg: "Picked up cluster IP address {{ cluster_ip }}"
 
     - name: Remove borrowed IP from Adapter 2
       ansible.windows.win_shell: |
-        Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false  
+        Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false 
+      when: not ip_file_status.stat.exists   
 
 
     # Make sure the first adapter is primary, important for the cluster creation later
