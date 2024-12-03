@@ -25,7 +25,10 @@
 - name: Load saved IP address
   ansible.builtin.slurp:
     src: "{{ cluster_ip_path }}"
-  register: cluster_ip  
+  register: cluster_ip_b64
+  cluster_ip: "{{ cluster_ip_b64 | b64decode }}"
+
+    
 
 - name: Show cluster ip
   debug:
