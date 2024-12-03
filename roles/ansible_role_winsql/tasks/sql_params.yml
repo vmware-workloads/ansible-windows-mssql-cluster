@@ -16,7 +16,7 @@
 - name: Firewall rule to allow SQL Connections on TCP port 1433
   community.windows.win_firewall_rule:
     name: SQL-Remote
-    localport: SQL-Remote-port
+    localport: "{{ SQL-Remote-port }}"
     action: allow
     direction: in
     protocol: tcp
@@ -26,7 +26,7 @@
 - name: Firewall rule to allow SQL AG Endpoint on TCP port 5022
   community.windows.win_firewall_rule:
     name: AG-Endpoint
-    localport: AG-Endpoint-port
+    localport: "{{ AG-Endpoint-port }}"
     action: allow
     direction: in
     protocol: tcp
