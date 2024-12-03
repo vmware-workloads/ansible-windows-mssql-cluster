@@ -23,8 +23,9 @@
   when: not ip_file_status.stat.exists
 
 - name: Load saved IP address
-  set_fact:
-    cluster_ip: "{{ lookup('file', cluster_ip_path) }}"
+  ansible.builtin.slurp:
+    src: "{{ cluster_ip_path }}"
+  register: cluster_ip  
 
 - name: Show cluster ip
   debug:
