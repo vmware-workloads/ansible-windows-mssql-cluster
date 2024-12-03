@@ -18,7 +18,7 @@
 - name: Save the db scipt to a file
   win_copy:
     content: "{{ db_script }}"
-    dest: db_script_path
+    dest: "{{ db_script_path }}"
 
 - name: Run DB script on first host
   run_once: true

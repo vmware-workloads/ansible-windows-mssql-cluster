@@ -19,13 +19,12 @@
 - name: Save the IP address to file
   win_copy:
     content: "{{ cluster_ip.stdout }}"
-    dest: cluster_ip_path
+    dest: "{{ cluster_ip_path }}"
   when: not ip_file_status.stat.exists
 
 - name: Load saved IP address
   set_fact:
-    cluster_ip: "{{ lookup('file', temp_file_path) }}"
-  when: cluster_ip is not defined
+    cluster_ip: "{{ lookup('file', cluster_ip_path) }}"
 
 - name: Show cluster ip
   debug:
@@ -34,6 +33,10 @@
 - name: Remove borrowed IP from Adapter 2
   ansible.windows.win_shell: |
     Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false 
+
+- name: Disable Adapter 2
+  ansible.windows.win_shell: |
+    Disable-NetAdapter -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false     
 
 
 # Make sure the first adapter is primary, important for the cluster creation later
