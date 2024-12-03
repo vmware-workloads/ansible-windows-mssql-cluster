@@ -27,8 +27,8 @@
     src: "{{ cluster_ip_path }}"
   register: cluster_ip_b64
   
-- name: Convert slurp from b64 
-  ansible.builtin.b64decode:
+- name: Convert slurp from b64
+  set_fact:
     cluster_ip: "{{ cluster_ip_b64 | b64decode }}"
 
     
