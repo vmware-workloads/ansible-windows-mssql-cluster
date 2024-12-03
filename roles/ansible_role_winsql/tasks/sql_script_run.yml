@@ -18,17 +18,30 @@
   ansible.windows.win_template:
     src: db_script
     dest: "{{ db_script_path }}" 
+
+# For powershell, any env variables (e.g. %USERPROFILE%) need to be converted 
+# to the form $env:USERPROFILE
+# We e
     
-- name: Convert %USERPROFILE% to env:userprofile for powershell
+- name: Convert to env var for powershell
   ansible.builtin.set_fact:
-    db_script_ps_path: "{{ db_script_path | replace('%', '') | lower | replace('userprofile', '\$env:userprofile') }}"
+    db_script_ps_path_raw: "{{ db_script_path | replace('%', '') | lower"
+
+    
+- name: Process string for powershell
+  run_once: true
+  ansible.windows.win_shell: |
+    echo %USERPROFILE%\ansible.cluster_ip
+  executable: cmd   
+  register: db_script_ps_path
+     
 
 - name: Display the converted string
   debug:
-    msg: "Converted string: {{ db_script_ps_path }}" 
+    msg: "Converted string: {{ db_script_ps_path.stdout }}" 
 
 - name: Run DB script on first host
   run_once: true
   ansible.windows.win_shell: |
-    sqlcmd -S 127.0.0.1 -E -i "{{ db_script_ps_path }}"
+    sqlcmd -S 127.0.0.1 -E -i "{{ db_script_ps_path.stdout }}"
     
