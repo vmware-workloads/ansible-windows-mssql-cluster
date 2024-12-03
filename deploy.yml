@@ -26,7 +26,7 @@
 
     - name: Check if the IP file exists
       win_stat:
-        path: ./ansible.cluster_ip
+        path: '%USERPROFILE%\ansible.cluster_ip'
       register: ip_file_status
 
     - name: Borrow IP address from Adapter 2 from the first host
@@ -35,17 +35,11 @@
         (Get-NetIPAddress -InterfaceAlias 'Ethernet2' | Where AddressFamily -eq "IPv4").IPAddress
       when: not ip_file_status.stat.exists
       register: cluster_ip
-
-    - name: Create temporary file
-      ansible.windows.win_tempfile:
-        state: file
-        path: "%USERPROFILE%"       
-      register: temp_file_path       
-
+     
     - name: Save the IP address to file
       win_copy:
         content: "{{ cluster_ip.stdout }}"
-        dest: temp_file_path
+        dest: '%USERPROFILE%\ansible.cluster_ip'
       when: not ip_file_status.stat.exists
 
     - name: Load saved IP address
