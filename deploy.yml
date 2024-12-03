@@ -44,7 +44,7 @@
       register: temp_file_path       
 
     - name: Save the IP address to file
-      copy:
+      win_copy:
         content: "{{ cluster_ip.stdout }}"
         dest: "{{ temp_file_path }}"
       when: not ip_file_status.stat.exists
