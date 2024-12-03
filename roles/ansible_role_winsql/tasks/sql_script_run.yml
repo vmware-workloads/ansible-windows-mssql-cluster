@@ -21,7 +21,6 @@
 
 # For powershell, any env variables (e.g. %USERPROFILE%) need to be converted 
 # to the form $env:USERPROFILE
-# We e
     
 - name: Convert to env var for powershell
   ansible.builtin.set_fact:
