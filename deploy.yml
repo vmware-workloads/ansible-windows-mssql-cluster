@@ -1,16 +1,21 @@
+- name: Wait for systems to boot up
+  hosts: all
+  gather_facts: no
+  any_errors_fatal: true
+  tasks:
+    - name: Wait up to 300 seconds
+      wait_for_connection:
+        delay: 3
+        sleep: 5
+        timeout: 300
+
+
 - name: Setup SQL Always-On Cluster
   hosts: all
+  gather_facts: true  
   become: true
+  roles:
+    - ansible_role_winsql
 
 
-  vars:
-    
-    ansible_connection: ssh
-    ansible_shell_type: powershell
 
-    # It would be nice if we could programatically define this list of letters
-    # in python you can use the ord() and char() functions to convert into ascii codes
-    # and numerically iterate. However, Ansible doesn't nativley implement these fns 
-    # so this is the easiest way...
-
-    letters: ['e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
