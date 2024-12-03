@@ -1,0 +1,11 @@
+{
+  "aria_base_url": "https://vcf-wkld-vra02.tmm.lab",
+  "aria_username": "vidmadmin",
+  "aria_password": "P@ssword123!",
+  "workflow_name": "AntiAffinity-Add",
+  "delete_workflow_name": "AntiAffinity-Delete",
+  "vro_cr_name": "AntiAffinity_CustomResource",
+  "vro_cr_type_name": "Custom.AntiAffinityCR",
+  "project_name": "My Project",
+  "skip_certificate_check":  "True"
+}

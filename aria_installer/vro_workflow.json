@@ -1,0 +1,233 @@
+{
+  "customized-icon": false,
+  "name": "Workload - Create virtual machine anti-affinity rule",
+  "version": "0.1.3",
+  "description": "Creates an anti-affinity rule",
+  "category-id": "8a7480b492e270e10192e271bee906df",
+  "schema-workflow": {
+  "display-name": "Workload - Create virtual machine anti-affinity rule",
+  "description": "Creates an anti-affinity rule",
+  "ref-types": "(VC:StoragePod)",
+  "position": {
+    "y": 380,
+    "x": 180
+  },
+  "input": {
+    "param": [
+      {
+        "description": "Rule name",
+        "name": "ruleName",
+        "type": "string"
+      },
+      {
+        "description": "Virtual machines",
+        "name": "vmStringArray",
+        "type": "Array/string"
+      }
+    ]
+  },
+  "output": {
+    "param": [
+      {
+        "name": "myVM",
+        "type": "VC:VirtualMachine"
+      },
+      {
+        "name": "myVMs",
+        "type": "Array/VC:VirtualMachine"
+      },
+      {
+        "name": "drsAffinityGroupDetails",
+        "type": "CompositeType(cluster:VC:ClusterComputeResource,ruleName:string):drsDetails"
+      }
+    ]
+  },
+  "attrib": [
+    {
+      "description": "Task to wait for",
+      "type": "VC:Task",
+      "name": "task"
+    },
+    {
+      "description": "Log progess while waiting for the task",
+      "value": {
+        "boolean": {
+          "value": false
+        }
+      },
+      "type": "boolean",
+      "name": "progress"
+    },
+    {
+      "description": "Polling rate for the task state [seconds]",
+      "value": {
+        "number": {
+          "value": 1
+        }
+      },
+      "type": "number",
+      "name": "pollRate"
+    }
+  ],
+  "workflow-item": [
+    {
+      "display-name": "configure",
+      "script": {
+        "value": "\nSystem.log(\"Getting VM Details from vC\");\nvar allVms = VcPlugin.getAllVirtualMachines();\n\nmyVMs = [];\n\n\nSystem.log(\"Finding VMs that match deployed names:\");\nfor (var i = 0; i < allVms.length; i++) {\n\n    for (var v = 0; v < vmStringArray.length; v++) {\n\n      if (allVms[i].name === vmStringArray[v]) {\n        myVM = allVms[i];\n        myVMs.push(myVM);\n        System.log(myVM.name);\n      }\n    }  \n}\n\n\nSystem.log(\"Getting cluster details from VMs\");\n// get VC:ClusterComputeResource\nvar parent = myVMs[0].resourcePool;\nwhile (parent != null && ! (parent instanceof VcClusterComputeResource) && ! (parent instanceof VcComputeResource)) {\n\t parent = parent.parent;\n}\n\n\ncluster = parent;\n\nSystem.log(\"Creating anti-affinity rule\" + ruleName);\n//Create AntiAffinityRule\t\naffinitySpec = new VcClusterAntiAffinityRuleSpec();\naffinitySpec.enabled = true;\naffinitySpec.name = ruleName;\naffinitySpec.userCreated = true;\naffinitySpec.vm = myVMs;\n\n//Create ClusterRuleList\nvar clusterRuleSpec = new Array(new VcClusterRuleSpec());\nclusterRuleSpec[0] = new VcClusterRuleSpec()\nclusterRuleSpec[0].operation = VcArrayUpdateOperation.add;\nclusterRuleSpec[0].info = affinitySpec;\n \n//Create ClusterConfig\nvar clusterConfigSpec = new VcClusterConfigSpecEx();\nclusterConfigSpec.rulesSpec = clusterRuleSpec;\n\n//Fill details for a later remove operation\ndrsAffinityGroupDetails_cluster = cluster;\ndrsAffinityGroupDetails_ruleName = ruleName; \n\n//Apply the Config action\ntask = cluster.reconfigureComputeResource_Task(clusterConfigSpec, true);\n\nSystem.log(\"done\");\n\n",
+        "encoded": false
+      },
+      "in-binding": {
+        "bind": [
+          {
+            "name": "ruleName",
+            "type": "string",
+            "export-name": "ruleName"
+          },
+          {
+            "name": "vmStringArray",
+            "type": "Array/string",
+            "export-name": "vmStringArray"
+          }
+        ]
+      },
+      "out-binding": {
+        "bind": [
+          {
+            "name": "task",
+            "type": "VC:Task",
+            "export-name": "task"
+          },
+          {
+            "name": "myVM",
+            "type": "VC:VirtualMachine",
+            "export-name": "myVM"
+          },
+          {
+            "name": "myVMs",
+            "type": "Array/VC:VirtualMachine",
+            "export-name": "myVMs"
+          },
+          {
+            "name": "drsAffinityGroupDetails",
+            "type": "CompositeType(cluster:VC:ClusterComputeResource,ruleName:string):drsDetails",
+            "export-name": "drsAffinityGroupDetails"
+          },
+          {
+            "name": "drsAffinityGroupDetails_cluster",
+            "type": "VC:ClusterComputeResource",
+            "export-name": "drsAffinityGroupDetails.cluster"
+          },
+          {
+            "name": "drsAffinityGroupDetails_ruleName",
+            "type": "string",
+            "export-name": "drsAffinityGroupDetails.ruleName"
+          }
+        ]
+      },
+      "position": {
+        "y": 70,
+        "x": 160
+      },
+      "name": "item0",
+      "out-name": "item2",
+      "type": "task",
+      "comparator": 0
+    },
+    {
+      "in-binding": {},
+      "out-binding": {},
+      "position": {
+        "y": 190,
+        "x": 180
+      },
+      "name": "item1",
+      "type": "end",
+      "end-mode": "0",
+      "comparator": 0
+    },
+    {
+      "display-name": "vim3WaitTaskEnd",
+      "script": {
+        "value": "//Auto generated script, cannot be modified !\nactionResult = System.getModule(\"com.vmware.library.vc.basic\").vim3WaitTaskEnd(task,progress,pollRate) ;",
+        "encoded": false
+      },
+      "in-binding": {
+        "bind": [
+          {
+            "description": "Task to wait for",
+            "name": "task",
+            "type": "VC:Task",
+            "export-name": "task"
+          },
+          {
+            "description": "Log progess while waiting for the task",
+            "name": "progress",
+            "type": "boolean",
+            "export-name": "progress"
+          },
+          {
+            "description": "Polling rate for the task state [seconds]",
+            "name": "pollRate",
+            "type": "number",
+            "export-name": "pollRate"
+          }
+        ]
+      },
+      "out-binding": {
+        "bind": [
+          {
+            "name": "actionResult",
+            "type": "Any",
+            "export-name": "NULL"
+          }
+        ]
+      },
+      "description": "Wait for a vCenter Server task to end.\nWhen task ends, return the task result if any.",
+      "position": {
+        "y": 140,
+        "x": 140
+      },
+      "name": "item2",
+      "out-name": "item1",
+      "type": "task",
+      "script-module": "com.vmware.library.vc.basic/vim3WaitTaskEnd",
+      "comparator": 0
+    }
+  ],
+  "root-name": "item0",
+  "object-name": "Workflow:name=generic",
+  "id": "c2f17794-23e1-45e7-abff-68c69cf34ff7",
+  "version": "0.1.3",
+  "api-version": "6.0.0",
+  "allowed-operations": "vef",
+  "restartMode": 1,
+  "resumeFromFailedMode": 0,
+  "editor-version": "2.0"
+},
+  "input-parameters": [
+    {
+      "description": "Rule name",
+      "type": "string",
+      "name": "ruleName"
+    },
+    {
+      "description": "Virtual machines",
+      "type": "Array/string",
+      "name": "vmStringArray"
+    }
+  ],
+  "output-parameters": [
+    {
+      "type": "VC:VirtualMachine",
+      "name": "myVM"
+    },
+    {
+      "type": "Array/VC:VirtualMachine",
+      "name": "myVMs"
+    },
+    {
+      "type": "CompositeType(cluster:VC:ClusterComputeResource,ruleName:string):drsDetails",
+      "name": "drsAffinityGroupDetails"
+    }
+  ]
+}

@@ -1,0 +1,340 @@
+{
+  "customized-icon": false,
+  "name": "Power VM and wait",
+  "version": "0.9.6",
+  "description": "Powers off a virtual machine and waits for the process to complete.",
+  "schema-workflow": {
+    "display-name": "Workload - Power off virtual machine and wait",
+    "description": "Powers off a virtual machine and waits for the process to complete.",
+    "ref-types": "(VC:VirtualMachine)",
+    "position": {
+      "y": 0,
+      "x": 120
+    },
+    "input": {
+      "param": [
+        {
+          "description": "Virtual machine to power off",
+          "name": "vm",
+          "type": "VC:VirtualMachine"
+        }
+      ]
+    },
+    "attrib": [
+      {
+        "description": "Polling rate for the task state, in seconds",
+        "value": {
+          "number": {
+            "value": 2
+          }
+        },
+        "type": "number",
+        "name": "pollRate"
+      },
+      {
+        "description": "Task to await",
+        "type": "VC:Task",
+        "name": "task"
+      },
+      {
+        "description": "Log progress while waiting for the task to complete",
+        "value": {
+          "boolean": {
+            "value": false
+          }
+        },
+        "type": "boolean",
+        "name": "progress"
+      }
+    ],
+    "workflow-item": [
+      {
+        "display-name": "VM is poweredOn?",
+        "script": {
+          "value": "var vmState\nvmState = vm.runtime.powerState.value;\nreturn vmState == \"poweredOn\";",
+          "encoded": false
+        },
+        "in-binding": {
+          "bind": [
+            {
+              "name": "vm",
+              "type": "VC:VirtualMachine",
+              "export-name": "vm"
+            }
+          ]
+        },
+        "position": {
+          "y": 130,
+          "x": 80
+        },
+        "name": "item1",
+        "out-name": "item3",
+        "alt-out-name": "item16",
+        "type": "custom-condition",
+        "comparator": 0
+      },
+      {
+        "position": {
+          "y": 290,
+          "x": 320
+        },
+        "name": "item16",
+        "type": "end",
+        "end-mode": "0",
+        "comparator": 0
+      },
+      {
+        "display-name": "Suspended?",
+        "script": {
+          "value": "var vmState\nvmState = vm.runtime.powerState.value;\nreturn vmState == \"suspended\";",
+          "encoded": false
+        },
+        "in-binding": {
+          "bind": [
+            {
+              "name": "vm",
+              "type": "VC:VirtualMachine",
+              "export-name": "vm"
+            }
+          ]
+        },
+        "position": {
+          "y": 50,
+          "x": 80
+        },
+        "name": "item17",
+        "out-name": "item0",
+        "alt-out-name": "item1",
+        "type": "custom-condition",
+        "comparator": 0
+      },
+      {
+        "display-name": "vim3WaitTaskEnd",
+        "script": {
+          "value": "//Auto generated script, cannot be modified !\nactionResult = System.getModule(\"com.vmware.library.vc.basic\").vim3WaitTaskEnd(task,progress,pollRate) ;",
+          "encoded": false
+        },
+        "in-binding": {
+          "bind": [
+            {
+              "description": "Polling rate for the task state [seconds]",
+              "name": "pollRate",
+              "type": "number",
+              "export-name": "pollRate"
+            },
+            {
+              "description": "Log progess while waiting for the task",
+              "name": "progress",
+              "type": "boolean",
+              "export-name": "progress"
+            },
+            {
+              "description": "Task to Wait for",
+              "name": "task",
+              "type": "VC:Task",
+              "export-name": "task"
+            }
+          ]
+        },
+        "out-binding": {
+          "bind": [
+            {
+              "name": "actionResult",
+              "type": "Any",
+              "export-name": "NULL"
+            }
+          ]
+        },
+        "description": "Wait a VIM 3 Task to end.\nWhen task ended, return the ",
+        "position": {
+          "y": 140,
+          "x": 280
+        },
+        "name": "item2",
+        "out-name": "item1",
+        "type": "task",
+        "script-module": "com.vmware.library.vc.basic/vim3WaitTaskEnd",
+        "comparator": 0
+      },
+      {
+        "display-name": "vim3WaitTaskEnd",
+        "script": {
+          "value": "//Auto generated script, cannot be modified !\nactionResult = System.getModule(\"com.vmware.library.vc.basic\").vim3WaitTaskEnd(task,progress,pollRate) ;",
+          "encoded": false
+        },
+        "in-binding": {
+          "bind": [
+            {
+              "description": "Polling rate for the task state [seconds]",
+              "name": "pollRate",
+              "type": "number",
+              "export-name": "pollRate"
+            },
+            {
+              "description": "Log progess while waiting for the task",
+              "name": "progress",
+              "type": "boolean",
+              "export-name": "progress"
+            },
+            {
+              "description": "Task to Wait for",
+              "name": "task",
+              "type": "VC:Task",
+              "export-name": "task"
+            }
+          ]
+        },
+        "out-binding": {
+          "bind": [
+            {
+              "name": "actionResult",
+              "type": "Any",
+              "export-name": "NULL"
+            }
+          ]
+        },
+        "description": "Wait a VIM 3 Task to end.\nWhen task ended, return the ",
+        "position": {
+          "y": 300,
+          "x": 80
+        },
+        "name": "item4",
+        "out-name": "item16",
+        "type": "task",
+        "script-module": "com.vmware.library.vc.basic/vim3WaitTaskEnd",
+        "comparator": 0
+      },
+      {
+        "display-name": "startVM",
+        "script": {
+          "value": "//Auto generated script, cannot be modified !\nactionResult = System.getModule(\"com.vmware.library.vc.vm.power\").startVM(vm,host) ;",
+          "encoded": false
+        },
+        "in-binding": {
+          "bind": [
+            {
+              "description": "VM to start or resume",
+              "name": "vm",
+              "type": "VC:VirtualMachine",
+              "export-name": "vm"
+            },
+            {
+              "description": "[Optional] The host where the virtual machine is to be powered on. If no host is specified, the current associated host is used. This field must specify a host that is part of the same compute resource that the virtual machine is currently associated with. If this host is not compatible, the current host association is used. ",
+              "name": "host",
+              "type": "VC:HostSystem",
+              "export-name": "NULL"
+            }
+          ]
+        },
+        "out-binding": {
+          "bind": [
+            {
+              "name": "actionResult",
+              "type": "VC:Task",
+              "export-name": "task"
+            }
+          ]
+        },
+        "description": "Start / Resume a VM. Return the start task",
+        "position": {
+          "y": 60,
+          "x": 280
+        },
+        "name": "item0",
+        "out-name": "item2",
+        "type": "task",
+        "script-module": "com.vmware.library.vc.vm.power/startVM",
+        "comparator": 0
+      },
+      {
+        "display-name": "forcePowerOff",
+        "script": {
+          "value": "//Auto generated script, cannot be modified !\nactionResult = System.getModule(\"com.vmware.library.vc.vm.power\").forcePowerOff(vm) ;",
+          "encoded": false
+        },
+        "in-binding": {
+          "bind": [
+            {
+              "description": "VM to power off",
+              "name": "vm",
+              "type": "VC:VirtualMachine",
+              "export-name": "vm"
+            }
+          ]
+        },
+        "out-binding": {
+          "bind": [
+            {
+              "name": "actionResult",
+              "type": "VC:Task",
+              "export-name": "task"
+            }
+          ]
+        },
+        "description": "Force the power off of a VM",
+        "position": {
+          "y": 220,
+          "x": 80
+        },
+        "name": "item3",
+        "out-name": "item4",
+        "type": "task",
+        "script-module": "com.vmware.library.vc.vm.power/forcePowerOff",
+        "comparator": 0
+      }
+    ],
+    "presentation": {
+      "p-group": [
+        {
+          "title": "Virtual Machine",
+          "desc": "Virtual Machine to power off.",
+          "p-param": [
+            {
+              "desc": "Virtual machine to power off",
+              "p-qual": [
+                {
+                  "value": "",
+                  "name": "contextualParameter"
+                },
+                {
+                  "value": "true",
+                  "name": "mandatory"
+                }
+              ],
+              "name": "vm"
+            }
+          ]
+        }
+      ],
+      "p-qual": [
+        {
+          "value": "true",
+          "name": "autostart"
+        }
+      ]
+    },
+    "workflow-note": [
+      {
+        "description": "Resume a suspended VM",
+        "x": 240,
+        "y": 30,
+        "w": 170,
+        "h": 140
+      }
+    ],
+    "root-name": "item17",
+    "object-name": "Workflow:name=generic",
+    "version": "0.2.0",
+    "api-version": "6.0.0",
+    "allowed-operations": "vf",
+    "restartMode": 1,
+    "resumeFromFailedMode": 0
+  },
+  "input-parameters": [
+    {
+      "description": "Virtual machine to power off",
+      "type": "VC:VirtualMachine",
+      "name": "vm"
+    }
+  ]
+}
