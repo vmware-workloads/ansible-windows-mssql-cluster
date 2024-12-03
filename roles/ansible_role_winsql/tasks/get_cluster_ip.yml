@@ -38,6 +38,7 @@
 - name: Disable Adapter 2
   ansible.windows.win_shell: |
     Disable-NetAdapter -InterfaceAlias 'Ethernet2' -Confirm:$false
+  ignore_errors: yes  
     
 
 
