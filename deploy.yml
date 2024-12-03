@@ -26,8 +26,7 @@
 
     - name: Check if the IP file exists
       stat:
-        path: "./host_ips/{{ inventory_hostname }}.txt"
-      delegate_to: localhost
+        path: "./ansible.cluster_ip"
       register: ip_file_status
 
     - name: Borrow IP address from Adapter 2 from the first host
@@ -47,7 +46,7 @@
     - name: Save the IP address to file
       copy:
         content: "{{ cluster_ip.stdout }}"
-        dest: temp_file_path
+        dest: "{{ temp_file_path }}"
       when: not ip_file_status.stat.exists
 
     - name: Load saved IP address
