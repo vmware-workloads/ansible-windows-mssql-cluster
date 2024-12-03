@@ -6,7 +6,7 @@ This will automate the creation of a Windows SQL Cluster, using Aria Automation 
 ## REQUIREMENTS:
 
 * Windows image (see below)
-* Linux jump server (we used an Ubuntu VM)
+* Existing NSX network segment in Aria to consume, with enough free IPs available
 * Ansible Automation Platform (configured with credentials, etc. as below)
 * Aria Configured with the ABX Extensions for [Ansible API](https://github.com/vmware-workloads/aap-api) & [vSAN iSCSI](https://github.com/vmware-workloads/vSAN-iSCSI-ABX/tree/main)
 * vSAN with the iSCSI service enabled (just the service, we will automate LUN/target creation)
@@ -35,15 +35,6 @@ Broadly, the steps to prepare the image are as follows:
 * Install VM tools
 * Ensure the user 'Administrator' is enabled and a password is set
 * Enable remote desktop
-* Install Cloudbase Cloud-Init:
-
-  * Download from here: <br>
-                  https://github.com/cloudbase/cloudbase-init?src=so_5703fb3d92c20&cid=70134000001M5td
-                
-  * Follow the specific instructions as below, update the config files, but **DO NOT** run sysprep: <br>
-                   https://docs.vmware.com/en/VMware-Aria-Automation/8.17/Using-Automation-Assembler/GUID-6A17EBEA-F9C3-486F-81DD-210EA065E92F.html
-
-* Create a ed25519 key pair on the Linux jump-server `ssh-keygen -t ed25519` and copy the public key
 * Install and configure OpenSSH, inserting the public key of the Linux jump-server, as below:
 
 ``` powershell
@@ -70,7 +61,7 @@ New-Item -Force -ItemType Directory -Path $env:USERPROFILE\.ssh; Add-Content -Fo
 
 ```
 
-* **IMPORTANT**: Comment out "Match Group administrators" in the file `%programdata%\ssh\sshd_config`
+* **IMPORTANT**: To use the .ssh directory for authorized keys, comment out "Match Group administrators" in the file `%programdata%\ssh\sshd_config`
   
 
 ### 3. VC & Aria Actions
@@ -86,7 +77,7 @@ New-Item -Force -ItemType Directory -Path $env:USERPROFILE\.ssh; Add-Content -Fo
 
 - Create a Credential with:
 
-	* The private key of the jumpserver
+    * User/password for the Windows VMs
 	* Escalation method as `runas`
 	* Priv. Escallation User: `Administrator`
 	* Priv. Escallation Pw: `(Administrator's password)`
