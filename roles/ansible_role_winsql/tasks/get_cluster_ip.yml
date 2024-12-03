@@ -28,7 +28,7 @@
   register: cluster_ip_b64
   
 - name: Convert slurp from b64 
-  cluster_ip: "{{ cluster_ip_b64 | b64decode }}"
+    cluster_ip: "{{ cluster_ip_b64 | b64decode }}"
 
     
 
