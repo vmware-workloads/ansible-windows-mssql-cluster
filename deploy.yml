@@ -37,16 +37,22 @@
       when: not ip_file_status.stat.exists
       register: cluster_ip
 
+    - name: Create temporary file
+      ansible.windows.win_tempfile:
+        state: file
+        suffix: cluster_ip
+        path: "%USERPROFILE%"       
+      register: temp_file_path       
+
     - name: Save the IP address to file
       copy:
         content: "{{ cluster_ip.stdout }}"
-        dest: "./cluster_ip/{{ inventory_hostname_cluster_ip }}.txt"
+        dest: temp_file_path
       when: not ip_file_status.stat.exists
-      delegate_to: localhost
 
     - name: Load saved IP address
       set_fact:
-        cluster_ip: "{{ lookup('file', './cluster_ip/{{ inventory_hostname_cluster_ip }}.txt') }}"
+        cluster_ip: "{{ lookup('file', temp_file_path) }}"
       when: cluster_ip is not defined
 
     - name: Use the saved IP address
