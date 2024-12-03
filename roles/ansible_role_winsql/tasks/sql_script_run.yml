@@ -19,18 +19,13 @@
     src: db_script
     dest: "{{ db_script_path }}" 
 
-# For powershell, any env variables (e.g. %USERPROFILE%) need to be converted 
-# to the form $env:USERPROFILE
-    
-- name: Convert to env var for powershell
-  ansible.builtin.set_fact:
-    db_script_ps_path_raw: "{{ db_script_path | replace('%', '') | lower"
-
+# Here we convert any env variables (e.g. %USERPROFILE%) into a straight string
+# for powershell
     
 - name: Process string for powershell
   run_once: true
   ansible.windows.win_shell: |
-    echo %USERPROFILE%\ansible.cluster_ip
+    echo "{{ db_script_path }}"
   executable: cmd   
   register: db_script_ps_path
      
