@@ -29,7 +29,7 @@
   
 - name: Convert slurp from b64
   set_fact:
-    cluster_ip: "{{ cluster_ip_b64 | b64decode }}"
+    cluster_ip: "{{ cluster_ip_b64.content | b64decode }}"
 
     
 
