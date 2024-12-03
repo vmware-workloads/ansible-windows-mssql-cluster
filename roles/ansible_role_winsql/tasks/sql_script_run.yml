@@ -21,7 +21,7 @@
     
 - name: Convert %USERPROFILE% to env:userprofile for powershell
   ansible.builtin.set_fact:
-    db_script_ps_path: "{{ db_script_path | replace('%', '') | regex_replace('userprofile', 'env:userprofile') }}"
+    db_script_ps_path: "{{ db_script_path | replace('%', '') | lower | regex_replace('userprofile', '\$env:userprofile') }}"
 
 - name: Display the converted string
   debug:
