@@ -13,14 +13,22 @@
 
 
 # Finally, we run the SQL script as passed in from VCF Automation
-
-
+    
 - name: Save the db scipt to a file
-  win_copy:
-    content: "{{ db_script }}"
-    dest: "{{ db_script_path }}"
+  ansible.windows.win_template:
+    src: db_script
+    dest: "{{ db_script_path }}" 
+    
+- name: Convert %USERPROFILE% to env:userprofile for powershell
+  ansible.builtin.set_fact:
+    db_script_ps_path: "{{ db_script_path | replace('%', '') | regex_replace('userprofile', 'env:userprofile') }}"
+
+- name: Display the converted string
+  debug:
+    msg: "Converted string: {{ db_script_ps_path }}" 
 
 - name: Run DB script on first host
   run_once: true
   ansible.windows.win_shell: |
-    sqlcmd -S 127.0.0.1 -E -i "{{ db_script_path }}"
+    sqlcmd -S 127.0.0.1 -E -i "{{ db_script_ps_path }}"
+    
