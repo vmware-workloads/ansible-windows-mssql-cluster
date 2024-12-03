@@ -34,6 +34,7 @@
 - name: Remove borrowed IP from Adapter 2
   ansible.windows.win_shell: |
     Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false 
+  ignore_errors: yes    
 
 - name: Disable Adapter 2
   ansible.windows.win_shell: |
