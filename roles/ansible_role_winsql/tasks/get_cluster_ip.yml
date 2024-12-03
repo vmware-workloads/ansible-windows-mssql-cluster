@@ -5,7 +5,7 @@
 
 - name: Check if the IP file exists
   win_stat:
-    path: cluster_ip_path
+    path: "{{ cluster_ip_path }}"
   register: ip_file_status
 
 - name: Borrow IP address from Adapter 2 from the first host
