@@ -25,8 +25,8 @@
     # This is 'safe' as VCF Automation still has the IP assigned to this deployment
 
     - name: Check if the IP file exists
-      stat:
-        path: c:\\Users\\Administrator\\ansible.cluster_ip
+      win_stat:
+        path: ./ansible.cluster_ip
       register: ip_file_status
 
     - name: Borrow IP address from Adapter 2 from the first host
