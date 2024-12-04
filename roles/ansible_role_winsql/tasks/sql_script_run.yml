@@ -39,12 +39,20 @@
   debug:
     msg: "Converted string: {{ db_script_ps_path }}" 
     
+
+
+- name: Get info for a mssql service
+  ansible.windows.win_service_info:
+    name: MSSQLSERVER
+  register: mssql_service_info    
+    
 - name: Check DB connection
   community.general.mssql_script:
     login_host: "{{ computerName }}"
     login_port: "{{ SQL_Remote_port }}"
     db: master
     script: "SELECT 1"    
+  when: mssql_service_info.exists == True and mssql_service_info.service.state == 'started'  
 
 - name: Run DB script on first host
   run_once: true
