@@ -19,7 +19,7 @@
     src: db_script
     dest: "{{ db_script_path }}" 
 
-# Here we convert any env variables (e.g. %USERPROFILE%) into a straight string
+# Here we convert any env variables (e.g. %USERPROFILE%) into a plain string
 # for powershell
     
 - name: Process string for powershell
@@ -32,7 +32,7 @@
   
 - name: strip string
   set_fact:
-     db_script_ps_path: "{{ db_script_ps_path_raw.stdout | trim }}" 
+     db_script_ps_path: "{{ db_script_ps_path_raw.stdout | trim | replace('\"', '')}}" 
      
 
 - name: Display the converted string
