@@ -40,7 +40,7 @@
 # on the input names from VCF Automation)
 #
 # disk mapping -- for device IDs/letters <-- used to init & partition disks 
-# drive mapping -- for disk names/letters <-- used to format the drives with the correct label
+# drive mapping -- for disk names/letters <-- used to format with the correct label
 # In theory we could merge these...       
 
 - name: Create drive letter disk name dict 
