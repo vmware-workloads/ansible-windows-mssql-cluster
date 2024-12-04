@@ -32,6 +32,3 @@
     protocol: tcp
     state: present
     enabled: yes               
-
-- name: Reboot
-  ansible.windows.win_reboot:

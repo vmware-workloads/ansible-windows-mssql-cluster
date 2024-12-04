@@ -38,6 +38,13 @@
 - name: Display the converted string
   debug:
     msg: "Converted string: {{ db_script_ps_path }}" 
+    
+- name: Check DB connection
+  community.general.mssql_script:
+    login_host: "{{ computerName }}"
+    login_port: "{{ SQL_Remote_port }}"
+    db: master
+    script: "SELECT 1"    
 
 - name: Run DB script on first host
   run_once: true
