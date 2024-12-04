@@ -44,7 +44,11 @@
 - name: Get info for a mssql service
   ansible.windows.win_service_info:
     name: MSSQLSERVER
-  register: mssql_service_info    
+  register: mssql_service_info 
+  
+- name: Show cluster ip
+  debug:
+    msg: "SQL Service: {{ mssql_service_info  }}"     
     
 - name: Check DB connection
   community.general.mssql_script:
@@ -52,7 +56,7 @@
     login_port: "{{ SQL_Remote_port }}"
     db: master
     script: "SELECT 1"    
-  when: mssql_service_info.exists == True and mssql_service_info.services.state == 'started'
+#  when: mssql_service_info.exists == True and mssql_service_info.services.state == 'started'
   retries: 3
   delay: 3  
 
