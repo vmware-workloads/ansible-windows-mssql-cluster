@@ -55,7 +55,7 @@
   
 - name: Trim computerName string
   set_fact:
-    computerName: {{ computerName_raw.stdout | trim }}       
+    computerName: "{{ computerName_raw.stdout | trim }}"       
  
 - name: Install SQL Server 2022
   win_chocolatey:
