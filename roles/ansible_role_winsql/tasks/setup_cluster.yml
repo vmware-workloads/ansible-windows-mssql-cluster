@@ -26,7 +26,7 @@
   register: always_on_ag  
   
 
- - name: Restart the SQL Service
+- name: Restart the SQL Service
   ansible.windows.win_service:
     name: MSSQLSERVER
     state: restarted   
