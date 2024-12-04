@@ -8,8 +8,8 @@
 - name: Get Cluster Details
   run_once: true
   ignore_errors: true  
-  ansible.windows.win_shell: |
-    (get-cluster).name
+  ansible.windows.win_command:
+    cmd: (get-cluster).name    
   register: windows_cluster        
     
 
@@ -18,7 +18,7 @@
   ansible.windows.win_shell: |
     $my_ip_list = "{{ ip_addresses }}" | ConvertFrom-Json
     new-cluster -Name {{ 'sql_cluster' + '-' + deployment_id }} -Node $my_ip_list -AdministrativeAccessPoint Dns -StaticAddress {{ cluster_ip }}
-  when: windows_cluster == ""   
+  when: not (windows_cluster.stderr == "" and windows_cluster.stdout == {{ 'sql_cluster' + '-' + deployment_id }})
 
 - name: Enable AlwaysOn Avail Groups
   ansible.windows.win_shell: |
