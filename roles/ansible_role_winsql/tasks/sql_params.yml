@@ -3,7 +3,7 @@
 - name: Enable TCP and Named Pipes for SQL
   ansible.windows.win_shell: |
     Import-Module -Name SQLPS
-    $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $hostname
+    $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $env:computername
     $uri = "ManagedComputer[@Name='" + (get-item env:\computername).Value + "']/ServerInstance[@Name='MSSQLSERVER']/ServerProtocol[@Name='Tcp']"
     $Tcp=$wmi.GetSmoObject($uri)
     $Tcp.IsEnabled = $true
