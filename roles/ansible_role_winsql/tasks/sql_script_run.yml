@@ -20,7 +20,7 @@
     dest: "{{ db_script_path }}" 
 
 # Here we convert any env variables (e.g. %USERPROFILE%) into a plain string
-# for powershell
+# for powershell by echoing through windows cmd
     
 - name: Process string for powershell
   run_once: true
@@ -49,10 +49,14 @@
       
 - name: Run DB script on first host
   run_once: true
-  ansible.windows.win_command: 
-    cmd: sqlcmd -S {{ computerName }} -E -i "{{ db_script_ps_path }}"
-#  ansible.windows.win_shell: |
-#    sqlcmd -S 127.0.0.1 -E -i "{{ db_script_ps_path }}"
+  ansible.windows.win_command:
+    argv:
+      - sqlcmd
+      - -S {{ computerName }}
+      - -E
+      - -i
+      - "{{ db_script_ps_path }}"
+#    cmd: sqlcmd -S {{ computerName }} -E -i "{{ db_script_ps_path }}"
   when: mssql_service_info.services[0].state == 'started'
   retries: 3
   delay: 3    
