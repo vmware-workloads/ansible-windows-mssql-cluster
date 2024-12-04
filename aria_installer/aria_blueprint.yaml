@@ -1,230 +1,185 @@
-name: confluent-kafka
+metadata:
+  name: Windows-SQL
+  description: v6 beta
 version: 1.0.0
 formatVersion: 2
+variables:
+# set the ansible template name
+  ansible:
+    template_name: MSSQL AG Template
+# define the user created on each VM    
+  windows:
+    user: Admin
+# set the SQL port for the load balancer    
+  ports:
+    sql_port: 1433
+# define the number of iscsi luns created per VM
+# we need at least one to create the windows cluster
+# for use as a quorum disk
+  iscsi:
+    size: 1
+    count: 1
+    vsan_cluster_name: Cluster
+    vsan_iscsi_vmk: vmk0
+# define the location of the database script created by cloud-init 
+# on each VM
 inputs:
-  vmImage:
-    type: string
-    title: VM Image
-    oneOf:
-      - title: Ubuntu Focal (20.04)
-        const: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.ova
-      - title: Ubuntu Jammy (22.04)
-        const: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.ova
-      - title: Ubuntu Noble (24.04)
-        const: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.ova
-    default: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.ova
   vmUsername:
     type: string
     title: VM Username
-    default: confluent
+    default: Administrator
   vmPassword:
     type: string
     title: VM Password
     default: P@ssword123!
     encrypted: true
-  broker_vmSize:
+  vmSize:
     type: string
-    title: Broker VM Size
-    default: large
-    enum:
-      - small
-      - medium
-      - large
-  zookeeper_vmSize:
-    type: string
-    title: Zookeeper VM Size
-    default: small
-    enum:
-      - small
-      - medium
-      - large
-  control-center_vmSize:
-    type: string
-    title: Control-Center VM Size
+    title: VM Size
     default: medium
     enum:
       - small
       - medium
       - large
-  zookeper_vmCount:
-    title: Number of Zookeeper VMs
+  vmCount:
+    title: Number ofVMs
     type: integer
-    default: 3
-  broker_vmCount:
-    title: Number of Zookeeper VMs
-    type: integer
-    default: 3
-    maximum: 16
-  broker_diskCount:
-    type: integer
-    title: Broker Additonal disks
-    minimum: 1
-    maximum: 8
-  broker_diskSize:
-    type: integer
-    title: Broker Disk Size (GB)
-    minimum: 100
-    maximum: 2048
+    default: 2
+  diskConfig:
+    default:
+      - name: logs
+        size: 80
+      - name: data
+        size: 80
+      - name: temp_db
+        size: 80
+    type: array
+    title: |
+      Log and Data disks (per VM).
+      ADD AT LEAST TWO disks called 'data' and 'logs'
+    minItems: 2
+    maxItems: 5
+    items:
+      type: object
+      properties:
+        size:
+          type: integer
+          title: Size GB
+          default: 80
+          maximum: 200
+        name:
+          type: string
+          title: name
   os_diskSize:
     type: integer
     title: OS Disk Size (GB)
-    minimum: 60
+    minimum: 90
     maximum: 200
-    default: 100
+    default: 90
   vmNotes:
     title: VM Notes
     type: string
-    default: Kafka
+    default: Windows-SQL
 resources:
-  Custom_antiaffinity:
-    type: Custom.AntiAffinityCR
-    dependsOn:
-      - kafka-broker
+# utilise three existing networks
+# one for iscsi traffic
+# web_net for normal traffic
+# finally extra_net just to provide an IP that
+# can be used by ansible for clustering
+# (in leiu of DHCP)
+  iscsi_net:
+    type: Cloud.NSX.Network
     properties:
-      ruleName: ${env.blueprintName}-rule
-      vmStringArray: ${map_by(resource.kafka-broker[*].resourceName, name => to_string(name))}
+      name: ls-vm
+      networkType: routed
   web_net:
     type: Cloud.NSX.Network
     properties:
       name: ls-web
-      networkType: routed
-  aap_api:
-    type: Custom.AAP
+      networkType: existing
+  extra_net:
+    type: Cloud.NSX.Network
     properties:
-      aapSSL: false
-      verbose: true
-      organization_name: Default
-      job_template_name: Confluent Platform Kafka Template
-      inventory_name: ${env.blueprintName}-${env.deploymentId}
-      inventory_variables:
-        use_ssl: true
-      hosts:
-        - ${resource.control-center.*}
-        - ${resource.zookeeper.*}
-        - ${resource.kafka-broker.*}
-      host_groups:
-        control_center:
-          - ${resource.control-center.*}
-        zookeeper:
-          - ${resource.zookeeper.*}
-        kafka_broker:
-          - ${resource.kafka-broker.*}
-      host_variables:
-        control_center:
-          rack: 1
-        zookeeper:
-          rack: 1
-        kafka_broker:
-          rack: 1
-  control-center:
-    type: Cloud.vSphere.Machine
-    allocatePerInstance: true
-    properties:
-      imageref: ${input.vmImage}
-      flavor: ${input.control-center_vmSize}
-      name: kafka-control-vm
-      remoteAccess:
-        authentication: usernamePassword
-        username: ${input.vmUsername}
-        password: ${input.vmPassword}
-      networks:
-        - network: ${resource.web_net.id}
-          assignment: static
-          domain: kafka.net
-      cloudConfigSettings:
-        deploymentFailOnCloudConfigRuntimeError: true
-      cloudConfig: |
-        #cloud-config
-        hostname: ${self.resourceName}
-        users:
-          - default
-          - name: ${input.vmUsername}
-            shell: /bin/bash
-            sudo: ALL=(ALL) NOPASSWD:ALL 
-        ssh_pwauth: true
-        runcmd:
-          - netplan apply
-        ssh_pwauth: true
-        runcmd:
-          - netplan apply    
-      storage:
-        bootDiskCapacityInGB: ${input.os_diskSize}
-  zookeeper:
-    type: Cloud.vSphere.Machine
-    allocatePerInstance: true
-    properties:
-      imageref: ${input.vmImage}
-      flavor: ${input.zookeeper_vmSize}
-      name: zookeeper-vm
-      remoteAccess:
-        authentication: usernamePassword
-        username: ${input.vmUsername}
-        password: ${input.vmPassword}
-      networks:
-        - network: ${resource.web_net.id}
-          assignment: static
-          domain: kafka.net
-      cloudConfigSettings:
-        deploymentFailOnCloudConfigRuntimeError: true
-      cloudConfig: |
-        #cloud-config
-        hostname: ${self.resourceName}
-        users:
-          - default
-          - name: ${input.vmUsername}
-            shell: /bin/bash
-            sudo: ALL=(ALL) NOPASSWD:ALL 
-        ssh_pwauth: true
-        runcmd:
-          - netplan apply
-        ssh_pwauth: true
-        runcmd:
-          - netplan apply    
-      storage:
-        bootDiskCapacityInGB: ${input.os_diskSize}
-  kafka-broker:
-    type: Cloud.vSphere.Machine
-    allocatePerInstance: true
-    properties:
-      imageRef: ${input.vmImage}
-      count: ${input.broker_vmCount}
-      flavor: ${input.broker_vmSize}
-      name: ${'kafka-broker-' + to_string(count.index)}      
-      remoteAccess:
-        authentication: usernamePassword
-        username: ${input.vmUsername}
-        password: ${input.vmPassword}
-      cloudConfigSettings:
-        deploymentFailOnCloudConfigRuntimeError: true
-      attachedDisks: ${map_to_object(slice(resource.broker_disk[*].id, input.broker_diskCount * count.index, input.broker_diskCount * (count.index + 1)), "source")}
-      cloudConfig: |
-        #cloud-config
-        hostname: ${self.resourceName}
-        users:
-          - default
-          - name: ${input.vmUsername}
-            shell: /bin/bash
-            sudo: ALL=(ALL) NOPASSWD:ALL 
-        ssh_pwauth: true
-        runcmd:
-          - netplan apply
-        ssh_pwauth: true
-        runcmd:
-          - netplan apply  
-      networks:
-        - network: ${resource.web_net.id}
-          assignment: static
-          domain: kafka.net
-      storage:
-        bootDiskCapacityInGB: ${input.os_diskSize}
-  broker_disk:
+      name: ls-web2
+      networkType: existing
+# setup the load balancer 
+# create the disks for the VMs
+# as defined in the input form.
+# We round-robin assign these across
+# four scsi adapters to maximise perf
+  disk:
     type: Cloud.vSphere.Disk
     allocatePerInstance: true
     properties:
-      capacityGb: ${input.broker_diskSize}
+      capacityGb: ${input.diskConfig[count.index % length(input.diskConfig)].size}
       SCSIController: ${'SCSI_Controller_' + to_string(count.index % 4)}
-      count: ${input.broker_vmCount * input.broker_diskCount}
-      name: kafka_broker-${count.index}
+      name: ${input.diskConfig[count.index % length(input.diskConfig)].name}
       tags:
         - key: App
-          value: ${to_string('kafka_broker_' + count.index)}
+          value: ${self.name}-${count.index}
+      count: ${input.vmCount * length(input.diskConfig)}
+# Use the vsan_iscsi abx to create
+# the required number of iscsi luns
+  Custom_vSAN_ISCSI_1:
+    type: Custom.vSAN_ISCSI
+    properties:
+      vSAN_iSCSI_VMK: ${variable.iscsi.vsan_iscsi_vmk}
+      vSAN_Cluster_Name: ${variable.iscsi.vsan_cluster_name}
+      vSAN_iSCSI_LUN_Prefix: ${env.blueprintName}
+      vSAN_iSCSI_Target: ${env.deploymentName}
+      vSAN_iSCSI_dataluns: ${variable.iscsi.count}
+      vSAN_iSCSI_lunSize: ${variable.iscsi.size}
+# VM configuration
+# We use cloud init to 
+# 1. set the net adaptors to private
+# 2. set a unique hostname 'sql-' appended by a uuid
+# this needs to be a max of 15 chars, so we truncate
+# 3. setup users
+  sql_server:
+    type: Cloud.vSphere.Machine
+    allocatePerInstance: true
+    properties:
+      count: ${input.vmCount}
+      image: windows-nocloudinit
+      flavor: medium
+      name: ${ substring('sql-' + uuid(),0,14) }
+      customizationSpec: windows-template
+      remoteAccess:
+        authentication: publicPrivateKey
+        username: ${input.vmUsername}
+        sshKey: 
+      networks:
+        - network: ${resource.web_net.id}
+          assignment: static
+          primaryAddress: true
+          deviceIndex: 0
+        - network: ${resource.iscsi_net.id}
+          deviceIndex: 1
+        - network: ${resource.extra_net.id}
+          assignment: static
+          deviceIndex: 2
+      attachedDisks: ${map_to_object(slice(resource.disk[*].id, length(input.diskConfig) * count.index, length(input.diskConfig) * (count.index + 1)), "source")}
+      storage:
+        bootDiskCapacityInGB: ${input.os_diskSize}
+   # connect to the AAP ABX, passing in the appropriate
+   # variables
+  Custom_api_ansible_automation_platform_1:
+    type: Custom.AAP
+    properties:
+      aapSSL: false
+      organization_name: Default
+      hosts:
+        - ${resource.sql_server.*}
+      host_groups:
+        sql:
+          - ${resource.sql_server.*}
+      inventory_name: ${env.blueprintName}-${env.deploymentId}
+      inventory_variables:
+        deployment_id: ${env.deploymentId}
+        use_ssl: true
+        disk_number: ${length(input.diskConfig)}
+        disk_names: ${filter_by(resource.disk.name, (k,v) => v >= 0 && v < length(input.diskConfig))}
+      job_template_name: ${variable.ansible.template_name}
+      group_variables:
+        sql:
+          iscsi_share: ${resource.Custom_vSAN_ISCSI_1.*}

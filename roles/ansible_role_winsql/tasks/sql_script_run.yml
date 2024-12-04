@@ -6,6 +6,6 @@
   ansible.windows.win_command:
     cmd: sqlcmd -S {{ computerName }} -E -i "{{ db_script_ps_path }}"
   when: mssql_service_info.services[0].state == 'started'
-  retries: 3
+  retries: 5
   delay: 3    
     
