@@ -46,24 +46,14 @@
     name: MSSQLSERVER
   register: mssql_service_info 
   
-- name: Show cluster ip
-  debug:
-    msg: "SQL Service: {{ mssql_service_info  }}"     
-    
-- name: Check DB connection
-  community.general.mssql_script:
-    login_host: "{{ computerName }}"
-    login_port: "{{ SQL_Remote_port }}"
-    db: master
-    script: "SELECT 1"    
-#  when: mssql_service_info.exists == True and mssql_service_info.services.state == 'started'
-  retries: 3
-  delay: 3  
-
+      
 - name: Run DB script on first host
   run_once: true
 #  ansible.windows.win_command: 
 #    cmd: sqlcmd -S {{ computerName }} -E -i "{{ db_script_ps_path }}"
   ansible.windows.win_shell: |
     sqlcmd -S 127.0.0.1 -E -i "{{ db_script_ps_path }}"
+  when: mssql_service_info.exists == True and mssql_service_info.state == 'started'
+  retries: 3
+  delay: 3    
     
