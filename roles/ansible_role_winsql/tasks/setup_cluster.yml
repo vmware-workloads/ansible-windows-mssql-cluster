@@ -23,6 +23,10 @@
 - name: Enable AlwaysOn Avail Groups
   ansible.windows.win_shell: |
     foreach ($node in Get-ClusterNode) {Enable-SqlAlwaysOn -ServerInstance $node -Force}  
-    Restart-Service MSSQLSERVER
+  register: always_on_ag  
+  
 
- 
+ - name: Restart the SQL Service
+  ansible.windows.win_service:
+    name: MSSQLSERVER
+    state: restarted   
