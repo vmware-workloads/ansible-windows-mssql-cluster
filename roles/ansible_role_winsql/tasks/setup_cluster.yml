@@ -8,8 +8,8 @@
 - name: Get Cluster Details
   run_once: true
   ignore_errors: true  
-  ansible.windows.win_command:
-    cmd: (get-cluster).name    
+  ansible.windows.win_shell: |
+    (get-cluster).name    
   register: windows_cluster        
     
 
