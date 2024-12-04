@@ -48,16 +48,20 @@
     
 # Install the MS-SQL Server Dev Edition from the Choco catalogue
 
-- name: Get computername
+- name: Get hostname (computer name)
   ansible.windows.win_shell: |
     [System.Net.Dns]::GetHostName()
-  register: computerName   
+  register: computerName_raw
+  
+- name: Trim computerName string
+  set_fact:
+    computerName: {{ computerName_raw.stdout | trim }}       
  
 - name: Install SQL Server 2022
   win_chocolatey:
     name: sql-server-2022
     state: present
-    package_params: /SQLSYSADMINACCOUNTS:{{ computerName.stdout | trim }}\Administrator
+    package_params: /SQLSYSADMINACCOUNTS:{{ computerName }}\{{ sysadmin_user }}
   retries: 3
   delay: 3
   register: result

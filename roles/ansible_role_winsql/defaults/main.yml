@@ -16,3 +16,5 @@ db_script_path:  '%USERPROFILE%\ansible.db_script'
 cluster_ip_path: '%USERPROFILE%\ansible.cluster_ip'
 
 windows_cluster: null
+
+sysadmin_user: Administrator
