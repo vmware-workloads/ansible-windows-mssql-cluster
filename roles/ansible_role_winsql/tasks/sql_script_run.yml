@@ -15,10 +15,10 @@
   
 - name: Create DB Account
   ansible.windows.win_shell: |
-    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    $sql_file = [Console]::In.ReadToEnd()
     sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', 'templates/create_db_user.j2') }}"
+    stdin: "{{ lookup('template', 'templates/create_db_user.j2') | regex_replace('\n|\t', ' ') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
   when: inventory_hostname == ansible_play_hosts[0]
@@ -28,10 +28,10 @@
   
 - name: Create DB & backup
   ansible.windows.win_shell: |
-    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    $sql_file = [Console]::In.ReadToEnd()
     sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', 'templates/create_db.j2') }}"
+    stdin: "{{ lookup('template', 'templates/create_db.j2') | regex_replace('\n|\t', ' ') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
   when: inventory_hostname == ansible_play_hosts[0]  
@@ -41,10 +41,10 @@
 
 - name: Create HADR Endpoing
   ansible.windows.win_shell: |
-    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    $sql_file = [Console]::In.ReadToEnd()
     sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', 'templates/create_hadr_endpoint.j2') }}"
+    stdin: "{{ lookup('template', 'templates/create_hadr_endpoint.j2') | regex_replace('\n|\t', ' ') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
   
@@ -53,10 +53,10 @@
   
 - name: Create AG on Primary Node
   ansible.windows.win_shell: |
-    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    $sql_file = [Console]::In.ReadToEnd()
     sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', 'templates/create_ag.j2') }}"
+    stdin: "{{ lookup('template', 'templates/create_ag.j2') | regex_replace('\n|\t', ' ') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
   when: inventory_hostname == ansible_play_hosts[0] 
@@ -67,10 +67,10 @@
   
 - name: Other nodes to join the AG
   ansible.windows.win_shell: |
-    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    $sql_file = [Console]::In.ReadToEnd()
     sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', 'templates/join_ag.j2') }}"
+    stdin: "{{ lookup('template', 'templates/join_ag.j2') | regex_replace('\n|\t', ' ') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
   when: inventory_hostname != ansible_play_hosts[0]     
