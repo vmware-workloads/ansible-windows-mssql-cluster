@@ -45,6 +45,6 @@
     stdin: "{{ item }}"
   register: sql_out
   failed_when: sql_out.stderr != ""   
-  loop: "{{ lookup('fileglob', 'templates/*.j2', wantlist=True)) }}"
+  loop: "{{ lookup('fileglob', 'templates/*.j2', wantlist=True) }}"
 
 
