@@ -26,25 +26,31 @@
 #     stdin: Write-Host test
     
   
-# - name: Process DB Scripts
-#   ansible.windows.win_shell: |
-#     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
-#     sqlcmd -S 127.0.0.1 -E -Q $sql_file
-#   args:
-#     stdin: "{{ lookup('template', template_file) }}"
-#   register: sql_out
-#   failed_when: sql_out.stderr != "" 
-  
-  
-  
-- name: Process DB Scripts On First Host
+- name: Create DB Account
+  run_once: true
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
     sqlcmd -S 127.0.0.1 -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', item) }}"
+    stdin: "{{ lookup('template', 'templates/create_db_user.j2) }}"
   register: sql_out
-  failed_when: sql_out.stderr != ""   
-  loop: "{{ q('fileglob', 'templates/first_host/*.j2') }}"  
+  failed_when: sql_out.stderr != "" 
+
+
+- name: Run a task on all hosts except the first
+  ansible.builtin.debug:
+    msg: "This task runs on all hosts except the first: {{ inventory_hostname }}"
+  when: inventory_hostname != ansible_play_hosts[0]  
+  
+  
+# - name: Process DB Scripts On First Host
+#   ansible.windows.win_shell: |
+#     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+#     sqlcmd -S 127.0.0.1 -E -Q $sql_file
+#   args:
+#     stdin: "{{ lookup('template', item) }}"
+#   register: sql_out
+#   failed_when: sql_out.stderr != ""   
+#   loop: "{{ q('fileglob', 'templates/init_cluster/*.j2') }}"  
 
 
