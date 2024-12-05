@@ -25,9 +25,19 @@
 #   args:
 #     stdin: Write-Host test
     
+# - name: Retrieve the input based on stdin
+#   ansible.windows.win_shell: |
+#     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+#     sqlcmd -S 127.0.0.1 -E -Q $sql_file
+#   args:
+#     stdin: "{{ lookup('template', 'create_db_user.j2') }}"
+#   register: sql_out        
+  
+  
 - name: Retrieve the input based on stdin
-  ansible.windows.win_shell: |
-    $string = [Console]::In.ReadToEnd().replace("`n","`t")
-    sqlcmd -S 127.0.0.1 -E -Q $string
+  ansible.windows.win_command: |
+    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    sqlcmd -S 127.0.0.1 -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', 'create_db_user.j2') }}"      
+    stdin: "{{ lookup('template', 'create_db_user.j2') }}"
+  register: sql_out   
