@@ -1,22 +1,22 @@
 
   
           
-- name: Get hostname (computer name)
-  ansible.windows.win_shell: |
-    [System.Net.Dns]::GetHostName()
-  register: computerName_raw
-  
-- name: Trim computerName string
-  set_fact:
-    computerName: "{{ computerName_raw.stdout | trim }}"
-    cacheable: true 
+# - name: Get hostname (computer name)
+#   ansible.windows.win_shell: |
+#     [System.Net.Dns]::GetHostName()
+#   register: computerName_raw
+#   
+# - name: Trim computerName string
+#   set_fact:
+#     computerName: "{{ computerName_raw.stdout | trim }}"
+#     cacheable: true 
     
       
   
 - name: Create DB Account
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
-    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+    sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
     stdin: "{{ lookup('template', 'templates/create_db_user.j2') }}"
   register: sql_out
@@ -29,7 +29,7 @@
 - name: Create DB & backup
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
-    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+    sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
     stdin: "{{ lookup('template', 'templates/create_db.j2') }}"
   register: sql_out
@@ -42,7 +42,7 @@
 - name: Create HADR Endpoing
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
-    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+    sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
     stdin: "{{ lookup('template', 'templates/create_hadr_endpoint.j2') }}"
   register: sql_out
@@ -54,7 +54,7 @@
 - name: Create DB & backup
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
-    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+    sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
     stdin: "{{ lookup('template', 'templates/create_ag.j2') }}"
   register: sql_out
@@ -68,7 +68,7 @@
 - name: Create DB & backup
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
-    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+    sqlcmd -S {{ computerName }} -E -Q $sql_file
   args:
     stdin: "{{ lookup('template', 'templates/join_ag.j2') }}"
   register: sql_out
