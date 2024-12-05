@@ -28,7 +28,6 @@
 - name: Create DB user
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
-#     sqlcmd -S {{ computerName }} -E -Q $sql_file
     sqlcmd -S 127.0.0.1 -E -Q $sql_file
   args:
     stdin: "{{ lookup('template', 'create_db_user.j2') }}"
