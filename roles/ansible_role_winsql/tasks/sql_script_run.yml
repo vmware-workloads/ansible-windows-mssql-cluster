@@ -1,13 +1,13 @@
 
   
       
-- name: Run DB script on first host
-  run_once: true
-  ansible.windows.win_command:
-    cmd: sqlcmd -S {{ computerName }} -E -i "{{ db_script_ps_path }}"
-  when: mssql_service_info.services[0].state == 'started'
-  retries: 5
-  delay: 3    
+# - name: Run DB script on first host
+#   run_once: true
+#   ansible.windows.win_command:
+#     cmd: sqlcmd -S {{ computerName }} -E -i "{{ db_script_ps_path }}"
+#   when: mssql_service_info.services[0].state == 'started'
+#   retries: 5
+#   delay: 3    
 
 
 # - name: Create the mssql availability group on the primary node
