@@ -1,46 +1,23 @@
-DECLARE @log_drive NVARCHAR(50);
-DECLARE @log_path NVARCHAR(50);
-DECLARE @data_drive NVARCHAR(50);
-DECLARE @data_path NVARCHAR(50);
-DECLARE @dbName NVARCHAR(50);
+BEGIN
 
-DECLARE @backup_data_path NVARCHAR(50);
-DECLARE @backup_log_path NVARCHAR(50);
-
-SET @dbName = {{ dbName }};
-SET @log_drive = {{ drive_mapping.logs }};
-SET @data_drive = {{ drive_mapping.data }};
-
-
-SET @log_path = @log_drive+":\" + @dbName + "_log.ldf";
-SET @data_path =  @data_drive+":\" + @dbName + "_data.mdf";
-
-set @backup_data_path =  @data_drive+":\" + @dbName +".bak";
-set @backup_log_path =  @log_drive+":\" + @dbName +".log";
-
--- Create the databse using the dbName defined above
-
-
-CREATE DATABASE ' + QUOTENAME(@dbName) + '
+CREATE DATABASE ' + QUOTENAME({{ dbName }}) + '
 ON PRIMARY 
 (
-    NAME = ' + QUOTENAME(@dbName + '_Data') + ',
-    FILENAME = ''' + @data_path + '''
-)
+    NAME = "{{ dbName }}_Data",
+    FILENAME = "{{ drive_mapping.data }}:\{{ dbName }}_data.mdf"
+);
 LOG ON
 (
-    NAME = ' + QUOTENAME(@dbName + '_Log') + ',
-    FILENAME = ''' + @log_path + '''
+    NAME = "{{ dbName }}_Log",
+    FILENAME = "{{ drive_mapping.logs }}:\{{ dbName }}_log.ldf"
 );
 
 
 
--- Backup the DB created above 
-
-
 BACKUP DATABASE @dbName
-TO DISK = @backup_data_path ;
+TO DISK = {{ drive_mapping.data }}:\{{ dbName }}.bak ;
 
 BACKUP LOG @dbName 
-TO DISK = @backup_log_path ;
+TO DISK = {{ drive_mapping.logs }}:\{{ dbName }}.log ;
 
+END

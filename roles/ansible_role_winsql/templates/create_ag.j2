@@ -7,14 +7,14 @@ DECLARE @SecondaryServer NVARCHAR(128) = (select member_name from master.sys.dm_
 	CREATE AVAILABILITY GROUP [{{ AG_Name }}]
 		WITH (CLUSTER_TYPE = NONE)
 		FOR REPLICA ON
-			N'{{ primary_host_name }}' WITH (
+			N''' + @PrimaryServer + N''' WITH (
 				ENDPOINT_URL = N''TCP://' + @PrimaryServer + N':5022'',
 				AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
 				FAILOVER_MODE = MANUAL,
 				SEEDING_MODE = AUTOMATIC,
 				SECONDARY_ROLE (ALLOW_CONNECTIONS = ALL)
 				),
-			N'{{ secondary_host_name }}' WITH ( 
+			N''' + @SecondaryServer + N''' WITH ( 
 				ENDPOINT_URL = N''TCP://' + @SecondaryServer + N':5022'', 
 				AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
 				FAILOVER_MODE = MANUAL,
