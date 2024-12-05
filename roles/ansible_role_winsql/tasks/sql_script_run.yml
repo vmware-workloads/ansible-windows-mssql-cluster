@@ -8,4 +8,26 @@
   when: mssql_service_info.services[0].state == 'started'
   retries: 5
   delay: 3    
+
+
+# - name: Create the mssql availability group on the primary node
+#   ansible.builtin.command: >
+#     {{ mssql_tools_bin_path }}/sqlcmd 
+#     -s localhost 
+#     -U SA 
+#     -P "{{ mssql_sa_password | default(default_mssql_sa_password) }}"
+#     -Q "IF NOT EXISTS (SELECT name FROM master.sys.availability_groups WHERE name = '{{ mssql_ag_name | default(default_mssql_ag_name) }}') BEGIN CREATE AVAILABILITY GROUP [{{ mssql_ag_name | default(default_mssql_ag_name) }}] WITH (DB_FAILOVER = ON, CLUSTER_TYPE = EXTERNAL, DTC_SUPPORT = NONE, AUTOMATED_BACKUP_PREFERENCE = SECONDARY_ONLY, REQUIRED_SYNCHRONIZED_SECONDARIES_TO_COMMIT = 1) FOR REPLICA ON {{  ag_node_parameters.splitlines() | join(',') }}; ALTER AVAILABILITY GROUP [{{ mssql_ag_name | default(default_mssql_ag_name) }}] GRANT CREATE ANY DATABASE END;"
+#   register: result
+  
+  
+# - name: Run an executable and send data to the stdin for the executable
+#   ansible.windows.win_command: powershell.exe -
+#   args:
+#     stdin: Write-Host test
     
+- name: Retrieve the input based on stdin
+  ansible.windows.win_shell: |
+    $string = [Console]::In.ReadToEnd()
+    Write-Output $string.Trim()
+  args:
+    stdin: db_script      

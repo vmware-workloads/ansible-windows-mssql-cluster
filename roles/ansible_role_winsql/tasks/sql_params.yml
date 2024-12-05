@@ -66,6 +66,7 @@
 - name: strip string
   set_fact:
      db_script_ps_path: "{{ db_script_ps_path_raw.stdout | trim | replace('\"', '')}}" 
+     cacheable: true
      
 
 - name: Display the converted string
