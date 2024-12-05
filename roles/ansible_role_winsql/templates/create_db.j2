@@ -1,0 +1,54 @@
+DECLARE @log_drive NVARCHAR(50)
+DECLARE @log_path NVARCHAR(50)
+DECLARE @data_drive NVARCHAR(50)
+DECLARE @data_path NVARCHAR(50)
+DECLARE @dbName NVARCHAR(50);
+
+DECLARE @backup_data_path NVARCHAR(50)
+DECLARE @backup_log_path NVARCHAR(50)
+
+SET @dbName = '{{ dbName }}';
+SET @log_drive = '{{ drive_mapping.logs }}'
+SET @data_drive = '{{ drive_mapping.data }}'
+
+
+SET @log_path = @log_drive+":\" + @dbName + "_log.ldf"
+SET @data_path =  @data_drive+":\" + @dbName + "_data.mdf"
+
+set @backup_data_path =  @data_drive+":\" + @dbName +".bak"
+set @backup_log_path =  @log_drive+":\" + @dbName +".log"
+
+-- Create the databse using the dbName defined above
+
+-- Construct the SQL command
+DECLARE @sql NVARCHAR(MAX);
+SET @sql = N'
+CREATE DATABASE ' + QUOTENAME(@dbName) + '
+ON PRIMARY 
+(
+    NAME = ' + QUOTENAME(@dbName + '_Data') + ',
+    FILENAME = ''' + @data_path + '''
+)
+LOG ON
+(
+    NAME = ' + QUOTENAME(@dbName + '_Log') + ',
+    FILENAME = ''' + @log_path + '''
+)';
+
+-- Print the SQL command for debugging purposes
+PRINT @sql;
+
+-- Execute the SQL command
+EXEC sp_executesql @sql;
+
+
+-- Backup the DB created above 
+
+
+BACKUP DATABASE @dbName
+TO DISK = @backup_data_path ;
+
+BACKUP LOG @dbName 
+TO DISK = @backup_log_path ;
+
+GO

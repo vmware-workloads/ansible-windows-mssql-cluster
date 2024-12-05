@@ -1,30 +1,6 @@
 
   
-      
-# - name: Run DB script on first host
-#   run_once: true
-#   ansible.windows.win_command:
-#     cmd: sqlcmd -S {{ computerName }} -E -i "{{ db_script_ps_path }}"
-#   when: mssql_service_info.services[0].state == 'started'
-#   retries: 5
-#   delay: 3    
-
-
-# - name: Create the mssql availability group on the primary node
-#   ansible.builtin.command: >
-#     {{ mssql_tools_bin_path }}/sqlcmd 
-#     -s localhost 
-#     -U SA 
-#     -P "{{ mssql_sa_password | default(default_mssql_sa_password) }}"
-#     -Q "IF NOT EXISTS (SELECT name FROM master.sys.availability_groups WHERE name = '{{ mssql_ag_name | default(default_mssql_ag_name) }}') BEGIN CREATE AVAILABILITY GROUP [{{ mssql_ag_name | default(default_mssql_ag_name) }}] WITH (DB_FAILOVER = ON, CLUSTER_TYPE = EXTERNAL, DTC_SUPPORT = NONE, AUTOMATED_BACKUP_PREFERENCE = SECONDARY_ONLY, REQUIRED_SYNCHRONIZED_SECONDARIES_TO_COMMIT = 1) FOR REPLICA ON {{  ag_node_parameters.splitlines() | join(',') }}; ALTER AVAILABILITY GROUP [{{ mssql_ag_name | default(default_mssql_ag_name) }}] GRANT CREATE ANY DATABASE END;"
-#   register: result
-  
-  
-# - name: Run an executable and send data to the stdin for the executable
-#   ansible.windows.win_command: powershell.exe -
-#   args:
-#     stdin: Write-Host test
-    
+          
 - name: Get hostname (computer name)
   ansible.windows.win_shell: |
     [System.Net.Dns]::GetHostName()
@@ -33,23 +9,75 @@
 - name: Trim computerName string
   set_fact:
     computerName: "{{ computerName_raw.stdout | trim }}"
-    cacheable: true   
+    cacheable: true 
+    
+      
   
 - name: Create DB Account
-  run_once: true
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
     sqlcmd -S 127.0.0.1 -E -Q $sql_file
   args:
     stdin: "{{ lookup('template', 'templates/create_db_user.j2') }}"
   register: sql_out
-  failed_when: sql_out.stderr != "" 
+  failed_when: sql_out.stderr != ""
+  when: inventory_hostname = ansible_play_hosts[0]
+ 
+ 
+# Create the database on the Primary node  
+  
+- name: Create DB & backup
+  ansible.windows.win_shell: |
+    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+  args:
+    stdin: "{{ lookup('template', 'templates/create_db.j2') }}"
+  register: sql_out
+  failed_when: sql_out.stderr != ""
+  when: inventory_hostname = ansible_play_hosts[0]  
+  
+
+# Create the HADR endpoint on all nodes    
+
+- name: Create HADR Endpoing
+  ansible.windows.win_shell: |
+    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+  args:
+    stdin: "{{ lookup('template', 'templates/create_hadr_endpoint.j2') }}"
+  register: sql_out
+  failed_when: sql_out.stderr != ""
+  
+
+# Create the AG on the Primary node  
+  
+- name: Create DB & backup
+  ansible.windows.win_shell: |
+    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+  args:
+    stdin: "{{ lookup('template', 'templates/create_ag.j2') }}"
+  register: sql_out
+  failed_when: sql_out.stderr != ""
+  when: inventory_hostname = ansible_play_hosts[0] 
+  
 
 
-- name: Run a task on all hosts except the first
-  ansible.builtin.debug:
-    msg: "This task runs on all hosts except the first: {{ computerName }}"
-  when: inventory_hostname != ansible_play_hosts[0]  
+# Get all other nodes to join the AG
+  
+- name: Create DB & backup
+  ansible.windows.win_shell: |
+    $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
+    sqlcmd -S 127.0.0.1 -E -Q $sql_file
+  args:
+    stdin: "{{ lookup('template', 'templates/join_ag.j2') }}"
+  register: sql_out
+  failed_when: sql_out.stderr != ""
+  when: inventory_hostname != ansible_play_hosts[0]     
+
+
+
+
   
   
 # - name: Process DB Scripts On First Host
