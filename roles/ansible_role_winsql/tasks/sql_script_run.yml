@@ -28,6 +28,6 @@
 - name: Retrieve the input based on stdin
   ansible.windows.win_shell: |
     $string = [Console]::In.ReadToEnd()
-    Write-Output $string.Trim()
+    Write-Output [Console]::In.ReadToEnd().replace("`n","`t")
   args:
-    stdin: "{{ lookup('template', 'db_script') }}"      
+    stdin: "{{ lookup('template', 'create_db_user.j2') }}"      
