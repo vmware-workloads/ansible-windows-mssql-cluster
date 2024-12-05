@@ -1,10 +1,7 @@
-ALTER AVAILABILITY GROUP ['{{ AG_Name }}'] JOIN;
+if not exists (select * From sys.availability_groups where name  = '{{ availability_group }}')
+BEGIN
 
-GO
+	ALTER AVAILABILITY GROUP [{{ AG_Name }}] JOIN WITH (CLUSTER_TYPE = NONE);
 
-ALTER AVAILABILITY GROUP ['{{ AG_Name }}'] GRANT CREATE ANY DATABASE;
-
-GO
-
-
-GO
+	ALTER AVAILABILITY GROUP [{{ AG_Name }}] GRANT CREATE ANY DATABASE;
+END

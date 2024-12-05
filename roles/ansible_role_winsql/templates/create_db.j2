@@ -20,9 +20,7 @@ set @backup_log_path =  @log_drive+":\" + @dbName +".log";
 
 -- Create the databse using the dbName defined above
 
--- Construct the SQL command
-DECLARE @sql NVARCHAR(MAX);
-SET @sql = N'
+
 CREATE DATABASE ' + QUOTENAME(@dbName) + '
 ON PRIMARY 
 (
@@ -33,13 +31,8 @@ LOG ON
 (
     NAME = ' + QUOTENAME(@dbName + '_Log') + ',
     FILENAME = ''' + @log_path + '''
-)';
+);
 
--- Print the SQL command for debugging purposes
-PRINT @sql;
-
--- Execute the SQL command
-EXEC sp_executesql @sql;
 
 
 -- Backup the DB created above 
@@ -51,4 +44,3 @@ TO DISK = @backup_data_path ;
 BACKUP LOG @dbName 
 TO DISK = @backup_log_path ;
 
-GO
