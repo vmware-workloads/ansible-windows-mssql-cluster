@@ -2,12 +2,12 @@ USE [master]
 
 GO
 
---- now create the AG 'MyAG'
+--- now create the AG 
 
 -- Define your T-SQL variables
 DECLARE @PrimaryServer NVARCHAR(128) = @@SERVERNAME;
 DECLARE @SecondaryServer NVARCHAR(128) = (select member_name from master.sys.dm_hadr_cluster_members where member_name like 'sql-%' and member_name not like @@servername);
-DECLARE @AvailabilityGroupName NVARCHAR(128) = '{{ AG_name }}';
+DECLARE @AvailabilityGroupName NVARCHAR(128) = '{{ AG_Name }}';
 DECLARE @DatabaseName NVARCHAR(128) = '{{ dbName }}';
 
 print @primaryServer
