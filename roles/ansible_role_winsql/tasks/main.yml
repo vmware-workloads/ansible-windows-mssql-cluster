@@ -22,4 +22,4 @@
   
 - name: Run DB Script
   ansible.builtin.include_tasks: sql_script_run.yml 
-  when: mssql_service_info.services[0].state == 'started'                
+#  when: mssql_service_info.services[0].state == 'started'                
