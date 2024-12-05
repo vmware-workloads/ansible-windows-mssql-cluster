@@ -32,7 +32,7 @@
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
     sqlcmd -S 127.0.0.1 -E -Q $sql_file
   args:
-    stdin: "{{ lookup('template', 'templates/create_db_user.j2) }}"
+    stdin: "{{ lookup('template', 'templates/create_db_user.j2') }}"
   register: sql_out
   failed_when: sql_out.stderr != "" 
 
