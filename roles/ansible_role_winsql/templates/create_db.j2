@@ -7,9 +7,9 @@ DECLARE @dbName NVARCHAR(50);
 DECLARE @backup_data_path NVARCHAR(50);
 DECLARE @backup_log_path NVARCHAR(50);
 
-SET @dbName = '{{ dbName }}';
-SET @log_drive = '{{ drive_mapping.logs }}';
-SET @data_drive = '{{ drive_mapping.data }}';
+SET @dbName = {{ dbName }};
+SET @log_drive = {{ drive_mapping.logs }};
+SET @data_drive = {{ drive_mapping.data }};
 
 
 SET @log_path = @log_drive+":\" + @dbName + "_log.ldf";

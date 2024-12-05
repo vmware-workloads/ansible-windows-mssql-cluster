@@ -1,4 +1,4 @@
-if not exists (select * From sys.availability_groups where name  = '{{ availability_group }}')
+if not exists (select * From sys.availability_groups where name  = '{{ AG_Name }}')
 BEGIN
 
 DECLARE @PrimaryServer NVARCHAR(128) = @@SERVERNAME;
