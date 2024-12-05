@@ -37,7 +37,7 @@
   
   
   
-- name: Process DB Scripts
+- name: Process DB Scripts On First Host
   ansible.windows.win_shell: |
     $sql_file = [Console]::In.ReadToEnd().replace("`n","`t")
     sqlcmd -S 127.0.0.1 -E -Q $sql_file
@@ -45,6 +45,6 @@
     stdin: "{{ lookup('template', item) }}"
   register: sql_out
   failed_when: sql_out.stderr != ""   
-  loop: "{{ q('fileglob', 'templates/*.j2') }}"  
+  loop: "{{ q('fileglob', 'templates/first_host/*.j2') }}"  
 
 
