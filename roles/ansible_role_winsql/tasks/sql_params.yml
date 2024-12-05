@@ -47,31 +47,31 @@
   loop: "{{ drive_mapping | dict2items }}"        
 
     
-- name: Save the db scipt to a file
-  ansible.windows.win_template:
-    src: db_script
-    dest: "{{ db_script_path }}" 
-
-# Here we convert any env variables (e.g. %USERPROFILE%) into a plain string
-# for powershell by echoing through windows cmd
-    
-- name: Process string for powershell
-  run_once: true
-  ansible.windows.win_shell: |
-    echo "{{ db_script_path }}"
-  args:
-    executable: cmd 
-  register: db_script_ps_path_raw
-  
-- name: strip string
-  set_fact:
-     db_script_ps_path: "{{ db_script_ps_path_raw.stdout | trim | replace('\"', '')}}" 
-     cacheable: true
-     
-
-- name: Display the converted string
-  debug:
-    msg: "Converted string: {{ db_script_ps_path }}" 
+# - name: Save the db scipt to a file
+#   ansible.windows.win_template:
+#     src: db_script
+#     dest: "{{ db_script_path }}" 
+# 
+# # Here we convert any env variables (e.g. %USERPROFILE%) into a plain string
+# # for powershell by echoing through windows cmd
+#     
+# - name: Process string for powershell
+#   run_once: true
+#   ansible.windows.win_shell: |
+#     echo "{{ db_script_path }}"
+#   args:
+#     executable: cmd 
+#   register: db_script_ps_path_raw
+#   
+# - name: strip string
+#   set_fact:
+#      db_script_ps_path: "{{ db_script_ps_path_raw.stdout | trim | replace('\"', '')}}" 
+#      cacheable: true
+#      
+# 
+# - name: Display the converted string
+#   debug:
+#     msg: "Converted string: {{ db_script_ps_path }}" 
     
 
 
