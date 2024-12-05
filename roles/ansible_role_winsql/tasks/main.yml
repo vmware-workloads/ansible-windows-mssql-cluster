@@ -2,26 +2,23 @@
   ansible.builtin.debug:
     msg: "{{ ansible_distribution }} - {{ ansible_distribution_version }}"
     
-- name: Get Cluster IP
-  ansible.builtin.include_tasks: get_cluster_ip.yml      
-  
-- name: Initialise Disks
-  ansible.builtin.include_tasks: get_cluster_ip.yml 
-  
-- name: Get Cluster IP
-  ansible.builtin.include_tasks: init_disks.yml 
-
-- name: Install Software Components
-  ansible.builtin.include_tasks: install_software.yml 
-
-- name: Setup iSCSI 
-  ansible.builtin.include_tasks: iscsi.yml 
-  
-- name: Setup Cluster
-  ansible.builtin.include_tasks: setup_cluster.yml 
-  
-- name: Set SQL Params
-  ansible.builtin.include_tasks: sql_params.yml   
+# - name: Get Cluster IP
+#   ansible.builtin.include_tasks: get_cluster_ip.yml      
+#     
+# - name: Initialise Disks
+#   ansible.builtin.include_tasks: init_disks.yml 
+# 
+# - name: Install Software Components
+#   ansible.builtin.include_tasks: install_software.yml 
+# 
+# - name: Setup iSCSI 
+#   ansible.builtin.include_tasks: iscsi.yml 
+#   
+# - name: Setup Cluster
+#   ansible.builtin.include_tasks: setup_cluster.yml 
+#   
+# - name: Set SQL Params
+#   ansible.builtin.include_tasks: sql_params.yml   
   
 - name: Run DB Script
   ansible.builtin.include_tasks: sql_script_run.yml 
