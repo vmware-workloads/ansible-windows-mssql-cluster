@@ -18,3 +18,5 @@ cluster_ip_path: '%USERPROFILE%\ansible.cluster_ip'
 windows_cluster: null
 
 sysadmin_user: Administrator
+
+sa_password: P@ssw0rd
