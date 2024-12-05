@@ -1,27 +1,24 @@
-USE [master]
-
-GO
-
-CREATE ENDPOINT [Hadr_endpoint] 
-	AS TCP (LISTENER_PORT = 5022)
-	FOR DATA_MIRRORING (ROLE = ALL, ENCRYPTION = REQUIRED ALGORITHM AES)
-
-GO
-
-IF (SELECT state FROM sys.endpoints WHERE name = N'Hadr_endpoint') <> 0
+IF NOT EXISTS ( SELECT * FROM sys.tcp_endpoints WHERE name = 'Hadr_endpoint' )
 BEGIN
-	ALTER ENDPOINT [Hadr_endpoint] STATE = STARTED
+	CREATE ENDPOINT [Hadr_endpoint]
+		AS TCP (LISTENER_IP = (0.0.0.0), LISTENER_PORT = 5022)
+		FOR DATA_MIRRORING (
+			ROLE = ALL,
+			ENCRYPTION = REQUIRED ALGORITHM AES
+			);
 END
 
-GO
 
-IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name='AlwaysOn_health')
+ALTER ENDPOINT [Hadr_endpoint] STATE = STARTED;
+
+
+
+IF EXISTS ( SELECT * FROM sys.server_event_sessions WHERE name = 'AlwaysOn_health' )
 BEGIN
   ALTER EVENT SESSION [AlwaysOn_health] ON SERVER WITH (STARTUP_STATE=ON);
 END
-IF NOT EXISTS(SELECT * FROM sys.dm_xe_sessions WHERE name='AlwaysOn_health')
+
+IF NOT EXISTS ( SELECT * FROM sys.dm_xe_sessions WHERE name = 'AlwaysOn_health' )
 BEGIN
   ALTER EVENT SESSION [AlwaysOn_health] ON SERVER STATE=START;
 END
-
-GO
