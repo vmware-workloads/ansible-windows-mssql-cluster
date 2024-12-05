@@ -39,7 +39,7 @@
 
 - name: Run a task on all hosts except the first
   ansible.builtin.debug:
-    msg: "This task runs on all hosts except the first: {{ inventory_hostname }}"
+    msg: "This task runs on all hosts except the first: {{ computerName }}"
   when: inventory_hostname != ansible_play_hosts[0]  
   
   
