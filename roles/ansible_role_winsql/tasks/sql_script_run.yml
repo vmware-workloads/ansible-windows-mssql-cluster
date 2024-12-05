@@ -30,4 +30,4 @@
     $string = [Console]::In.ReadToEnd()
     Write-Output $string.Trim()
   args:
-    stdin: db_script      
+    stdin: "{{ lookup('template', 'db_script') }}"      
