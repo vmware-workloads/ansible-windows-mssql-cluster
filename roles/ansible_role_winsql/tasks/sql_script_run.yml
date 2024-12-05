@@ -21,7 +21,7 @@
     stdin: "{{ lookup('template', 'templates/create_db_user.j2') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
-  when: inventory_hostname = ansible_play_hosts[0]
+  when: inventory_hostname == ansible_play_hosts[0]
  
  
 # Create the database on the Primary node  
@@ -34,7 +34,7 @@
     stdin: "{{ lookup('template', 'templates/create_db.j2') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
-  when: inventory_hostname = ansible_play_hosts[0]  
+  when: inventory_hostname == ansible_play_hosts[0]  
   
 
 # Create the HADR endpoint on all nodes    
@@ -59,7 +59,7 @@
     stdin: "{{ lookup('template', 'templates/create_ag.j2') }}"
   register: sql_out
   failed_when: sql_out.stderr != ""
-  when: inventory_hostname = ansible_play_hosts[0] 
+  when: inventory_hostname == ansible_play_hosts[0] 
   
 
 
