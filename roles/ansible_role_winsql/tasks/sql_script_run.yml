@@ -27,7 +27,7 @@
     
 - name: Retrieve the input based on stdin
   ansible.windows.win_shell: |
-    #$string = [Console]::In.ReadToEnd().replace("`n","`t")
-    sqlcmd -S {{ computerName }} -E -Q [Console]::In.ReadToEnd().replace("`n","`t")
+    $string = [Console]::In.ReadToEnd().replace("`n","`t")
+    sqlcmd -S {{ computerName }} -E -Q $string
   args:
     stdin: "{{ lookup('template', 'create_db_user.j2') }}"      
