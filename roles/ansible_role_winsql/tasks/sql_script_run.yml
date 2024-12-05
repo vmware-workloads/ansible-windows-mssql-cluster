@@ -25,6 +25,15 @@
 #   args:
 #     stdin: Write-Host test
     
+- name: Get hostname (computer name)
+  ansible.windows.win_shell: |
+    [System.Net.Dns]::GetHostName()
+  register: computerName_raw
+  
+- name: Trim computerName string
+  set_fact:
+    computerName: "{{ computerName_raw.stdout | trim }}"
+    cacheable: true   
   
 - name: Create DB Account
   run_once: true
