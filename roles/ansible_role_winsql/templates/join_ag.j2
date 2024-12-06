@@ -1,7 +1,11 @@
-if not exists (select * From sys.availability_groups where name  = '{{ AG_Name }}')
+DECLARE @AG_Name NVARCHAR(128) = '{{ AG_Name }}';
+DECLARE @sql NVARCHAR(MAX);
+
+SET @sql = '
+IF NOT EXISTS (SELECT * FROM sys.availability_groups WHERE name = @AG_Name)
 BEGIN
+    ALTER AVAILABILITY GROUP [' + @AG_Name + N'] JOIN WITH (CLUSTER_TYPE = NONE);
+    ALTER AVAILABILITY GROUP [' + @AG_Name + N'] GRANT CREATE ANY DATABASE;
+END';
 
-	ALTER AVAILABILITY GROUP [{{ AG_Name }}] JOIN WITH (CLUSTER_TYPE = NONE);
-
-	ALTER AVAILABILITY GROUP [{{ AG_Name }}] GRANT CREATE ANY DATABASE;
-END
+EXEC sp_executesql @sql, N'@AG_Name NVARCHAR(128)', @AG_Name;
