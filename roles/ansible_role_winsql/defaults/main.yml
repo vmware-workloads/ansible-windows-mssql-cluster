@@ -24,4 +24,4 @@ sysadmin_user: Administrator
 # Database vars... these will be passed in via Aria eventually
 sa_password: P@ssw0rd
 dbName: my_db2
-AG_Name: my_AG
+AG_Name: my_AG2
