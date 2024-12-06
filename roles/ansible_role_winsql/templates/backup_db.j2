@@ -2,14 +2,12 @@ DECLARE @dbName NVARCHAR(128) = '{{ dbName }}';
 DECLARE @data_drive NVARCHAR(128) = '{{ drive_mapping.data }}';
 DECLARE @log_drive NVARCHAR(128) = '{{ drive_mapping.logs }}';
 
-DECLARE @sql NVARCHAR(MAX);
+DECLARE @backup_data_path NVARCHAR(50) =  @data_drive+":\" + @dbName +".bak";
+DECLARE @backup_log_path NVARCHAR(50) =  @log_drive+":\" + @dbName +".log";
 
-SET @sql = '
+
 BACKUP DATABASE @dbName
-TO DISK = ''' + @data_drive + ':\' + @dbName + N'.bak'';
+TO DISK = @backup_data_path ;
 
-BACKUP LOG @dbName
-TO DISK = ''' + @log_drive + ':\' + @dbName + N'.bak.log'';
-';
-
-EXEC sp_executesql @sql;
+BACKUP LOG @dbName 
+TO DISK = @backup_log_path ;
