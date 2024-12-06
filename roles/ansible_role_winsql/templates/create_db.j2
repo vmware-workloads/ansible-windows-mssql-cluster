@@ -1,26 +1,27 @@
-DECLARE @dbName NVARCHAR(128);
-SET @dbName = '{{ dbName }}';
+DECLARE @dbName NVARCHAR(128) = '{{ dbName }}';
+DECLARE @data_drive NVARCHAR(128) = '{{ drive_mapping.data }}';
+DECLARE @log_drive NVARCHAR(128) = '{{ drive_mapping.logs }}';
 
-CREATE DATABASE [@dbName]
-ON PRIMARY
+DECLARE @sql NVARCHAR(MAX);
+
+SET @sql = '
+CREATE DATABASE [' + @dbName + N']
+ON 
 (
-    NAME = @dbName + '_Data',
-    FILENAME = '{{ drive_mapping.data }}:\\' + @dbName + '_data.mdf',
+    NAME = ''' + @dbName + N'_Data'',
+    FILENAME = ''' + @data_drive + ':\' + @dbName + N'_data.mdf'',
     SIZE = 10MB,
     MAXSIZE = 100MB,
     FILEGROWTH = 5MB
 )
 LOG ON 
 (
-    NAME = @dbName + '_Log',
-    FILENAME = '{{ drive_mapping.logs }}:\\' + @dbName + '_log.ldf',
+    NAME = ''' + @dbName + N'_Log'',
+    FILENAME = ''' + @log_drive + ':\' + @dbName + N'_log.ldf'',
     SIZE = 5MB,
     MAXSIZE = 50MB,
     FILEGROWTH = 2MB
-);
+);';
 
-BACKUP DATABASE @dbName
-TO DISK = '{{ drive_mapping.data }}:\' + @dbName + '.bak';
-
-BACKUP LOG @dbName
-TO DISK = '{{ drive_mapping.logs }}:\' + @dbName + '.log';
+-- Execute the dynamic SQL
+EXEC sp_executesql @sql;

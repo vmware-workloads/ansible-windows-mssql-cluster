@@ -1,0 +1,16 @@
+DECLARE @dbName NVARCHAR(128) = '{{ dbName }}';
+DECLARE @data_drive NVARCHAR(128) = '{{ drive_mapping.data }}';
+DECLARE @log_drive NVARCHAR(128) = '{{ drive_mapping.logs }}';
+
+DECLARE @sql NVARCHAR(MAX);
+
+SET @sql = '
+BACKUP DATABASE @dbName
+TO DISK = '{{ drive_mapping.data }}:\' + @dbName + '.bak';
+
+BACKUP LOG @dbName
+TO DISK = '{{ drive_mapping.logs }}:\' + @dbName + '.log';
+);';
+
+-- Execute the dynamic SQL
+EXEC sp_executesql @sql;
