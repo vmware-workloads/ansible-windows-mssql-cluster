@@ -1,6 +1,6 @@
 BEGIN
 
-CREATE DATABASE ' + QUOTENAME({{ dbName }}) + '
+CREATE DATABASE '{{ dbName }}'
 ON PRIMARY 
 (
     NAME = '{{ dbName }}_Data',
