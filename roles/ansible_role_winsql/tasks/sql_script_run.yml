@@ -76,15 +76,15 @@
 
 # Get all other nodes to join the AG
   
-# - name: Other nodes to join the AG
-#   ansible.windows.win_shell: |
-#     $sql_file = [Console]::In.ReadToEnd()
-#     sqlcmd -S {{ computerName }} -E -Q $sql_file
-#   args:
-#     stdin: "{{ lookup('template', 'templates/join_ag.j2') | regex_replace('\n|\t', ' ') }}"
-#   register: sql_out
-#   failed_when: sql_out.stderr != ""
-#   when: inventory_hostname != ansible_play_hosts[0]     
+- name: Other nodes to join the AG
+  ansible.windows.win_shell: |
+    $sql_file = [Console]::In.ReadToEnd()
+    sqlcmd -S {{ computerName }} -E -Q $sql_file
+  args:
+    stdin: "{{ lookup('template', 'templates/join_ag.j2') | regex_replace('\n|\t', ' ') }}"
+  register: sql_out
+  failed_when: sql_out.stderr != ""
+  when: inventory_hostname != ansible_play_hosts[0]     
 
 
 
