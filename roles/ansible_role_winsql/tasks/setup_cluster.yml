@@ -30,3 +30,5 @@
 - name: Restart the SQL Service
   ansible.windows.win_shell: | 
     Restart-Service MSSQLSERVER
+  retries: 3
+  delay: 3  

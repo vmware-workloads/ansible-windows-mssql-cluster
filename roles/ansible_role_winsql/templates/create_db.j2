@@ -6,7 +6,7 @@ DECLARE @sql NVARCHAR(MAX);
 
 SET @sql = '
 CREATE DATABASE [' + @dbName + N']
-ON 
+ON PRIMARY
 (
     NAME = ''' + @dbName + N'_Data'',
     FILENAME = ''' + @data_drive + ':\' + @dbName + N'_data.mdf'',
