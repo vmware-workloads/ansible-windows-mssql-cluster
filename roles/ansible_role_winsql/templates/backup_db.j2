@@ -6,11 +6,10 @@ DECLARE @sql NVARCHAR(MAX);
 
 SET @sql = '
 BACKUP DATABASE @dbName
-TO DISK = '{{ drive_mapping.data }}:\' + @dbName + '.bak';
+TO DISK = ''' + @data_drive + ':\' + @dbName + N'.bak'';
 
 BACKUP LOG @dbName
-TO DISK = '{{ drive_mapping.logs }}:\' + @dbName + '.log';
-);';
+TO DISK = ''' + @log_drive + ':\' + @dbName + N'.bak.log'';
+';
 
--- Execute the dynamic SQL
 EXEC sp_executesql @sql;
