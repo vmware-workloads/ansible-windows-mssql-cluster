@@ -37,14 +37,14 @@
 # As we're not in production, this will do for now, but ideally
 # we should create a separate user for SQL, etc.
 
-- name: Set drive/folder permissions for the sql service
-  ansible.windows.win_acl:
-    user: NT Service\MSSQLSERVER
-    path: "{{ item.value + ':\' }}"
-    rights: FullControl
-    type: allow
-    state: present
-  loop: "{{ drive_mapping | dict2items }}"        
+# - name: Set drive/folder permissions for the sql service
+#   ansible.windows.win_acl:
+#     user: NT Service\MSSQLSERVER
+#     path: "{{ item.value + ':\' }}"
+#     rights: FullControl
+#     type: allow
+#     state: present
+#   loop: "{{ drive_mapping | dict2items }}"        
 
     
 # - name: Save the db scipt to a file

@@ -43,11 +43,11 @@
     Remove-NetIPAddress -InterfaceAlias 'Ethernet2' -IncludeAllCompartments -Confirm:$false 
   ignore_errors: yes    
 
-- name: Disable Adapter 2
-  ansible.windows.win_shell: |
-    Disable-NetAdapter -InterfaceAlias 'Ethernet2' -Confirm:$false
-  ignore_errors: yes  
-    
+# - name: Disable Adapter 2
+#   ansible.windows.win_shell: |
+#     Disable-NetAdapter -InterfaceAlias 'Ethernet2' -Confirm:$false
+#   ignore_errors: yes  
+#     
 
 
 # Make sure the first adapter is primary, important for the cluster creation later
