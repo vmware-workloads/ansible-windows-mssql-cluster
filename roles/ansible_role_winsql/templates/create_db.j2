@@ -1,23 +1,23 @@
 BEGIN
 
-CREATE DATABASE '{{ dbName }}'
+CREATE DATABASE {{ dbName }}
 ON PRIMARY 
 (
-    NAME = '{{ dbName }}_Data',
+    NAME = N'{{ dbName }}_Data',
     FILENAME = '{{ drive_mapping.data }}:\\{{ dbName }}_data.mdf'
-);
+)
 LOG ON
 (
-    NAME = '{{ dbName }}_Log',
+    NAME = N'{{ dbName }}_Log',
     FILENAME = '{{ drive_mapping.logs }}:\\{{ dbName }}_log.ldf'
 );
 
 
 
 BACKUP DATABASE @dbName
-TO DISK = {{ drive_mapping.data }}:\\{{ dbName }}.bak ;
+TO DISK = '{{ drive_mapping.data }}:\\{{ dbName }}.bak' ;
 
 BACKUP LOG @dbName 
-TO DISK = {{ drive_mapping.logs }}:\\{{ dbName }}.log ;
+TO DISK = '{{ drive_mapping.logs }}:\\{{ dbName }}.log' ;
 
 END

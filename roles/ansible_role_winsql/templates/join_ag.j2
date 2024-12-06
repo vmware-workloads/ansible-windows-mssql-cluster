@@ -1,4 +1,4 @@
-if not exists (select * From sys.availability_groups where name  = '{{ availability_group }}')
+if not exists (select * From sys.availability_groups where name  = '{{ AG_Name }}')
 BEGIN
 
 	ALTER AVAILABILITY GROUP [{{ AG_Name }}] JOIN WITH (CLUSTER_TYPE = NONE);
