@@ -1,27 +1,32 @@
-if not exists (select * From sys.availability_groups where name  = '{{ AG_Name }}')
-BEGIN
-
 DECLARE @PrimaryServer NVARCHAR(128) = @@SERVERNAME;
-DECLARE @SecondaryServer NVARCHAR(128) = (select member_name from master.sys.dm_hadr_cluster_members where member_name like 'sql-%' and member_name not like @@servername);
+DECLARE @SecondaryServer NVARCHAR(128) = 
+    (SELECT member_name 
+     FROM master.sys.dm_hadr_cluster_members 
+     WHERE member_name LIKE 'sql-%' 
+       AND member_name NOT LIKE @@SERVERNAME);
 
-	CREATE AVAILABILITY GROUP [{{ AG_Name }}]
-		WITH (CLUSTER_TYPE = NONE)
-		FOR REPLICA ON
-			N''' + @PrimaryServer + N''' WITH (
-				ENDPOINT_URL = N''TCP://' + @PrimaryServer + N':5022'',
-				AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
-				FAILOVER_MODE = MANUAL,
-				SEEDING_MODE = AUTOMATIC,
-				SECONDARY_ROLE (ALLOW_CONNECTIONS = ALL)
-				),
-			N''' + @SecondaryServer + N''' WITH ( 
-				ENDPOINT_URL = N''TCP://' + @SecondaryServer + N':5022'', 
-				AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
-				FAILOVER_MODE = MANUAL,
-				SEEDING_MODE = AUTOMATIC,
-				SECONDARY_ROLE (ALLOW_CONNECTIONS = ALL)
-				);
+DECLARE @Sql NVARCHAR(MAX);
 
-END
+SET @Sql = N'
+CREATE AVAILABILITY GROUP [' + QUOTENAME('{{ AG_Name }}') + N']
+WITH (CLUSTER_TYPE = NONE)
+FOR REPLICA ON
+    N''' + @PrimaryServer + N''' WITH (
+        ENDPOINT_URL = N''TCP://' + @PrimaryServer + N':5022'',
+        AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
+        FAILOVER_MODE = MANUAL,
+        SEEDING_MODE = AUTOMATIC,
+        SECONDARY_ROLE (ALLOW_CONNECTIONS = ALL)
+    ),
+    N''' + @SecondaryServer + N''' WITH (
+        ENDPOINT_URL = N''TCP://' + @SecondaryServer + N':5022'',
+        AVAILABILITY_MODE = ASYNCHRONOUS_COMMIT,
+        FAILOVER_MODE = MANUAL,
+        SEEDING_MODE = AUTOMATIC,
+        SECONDARY_ROLE (ALLOW_CONNECTIONS = ALL)
+    );
 
-ALTER AVAILABILITY GROUP [{{ AG_Name }}] GRANT CREATE ANY DATABASE;
+ALTER AVAILABILITY GROUP [' + QUOTENAME('{{ AG_Name }}') + N'] GRANT CREATE ANY DATABASE;
+';
+
+EXEC sp_executesql @Sql;
