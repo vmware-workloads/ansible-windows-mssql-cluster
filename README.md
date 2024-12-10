@@ -67,10 +67,12 @@ New-Item -Force -ItemType Directory -Path $env:USERPROFILE\.ssh; Add-Content -Fo
 ### 3. VC & Aria Actions
 
 - Power down the VM
-- Eject the CDROM & set to 'Client Device' on the VM
+- Eject the CDROM & set to 'Client Device' / Passthrough on the VM
 - Convert the VM to a Template
 - Create a new image mapping to the template in Aria Automation
-- Create a Blueprint/Template to deploy (see `example_blueprint.yaml`)
+- Create a Blueprint/Template to deploy (see `aria_installer\aria_blueprint.yaml`)
+    - The installer works (see the readme in the `aria_installer` directory) but will also install a vro workflow that isn't currently used
+- Create a Customization spec `windows-template` that contains the credentials for the VM
 
 
 ### 4. Ansible Setup
@@ -81,6 +83,16 @@ New-Item -Force -ItemType Directory -Path $env:USERPROFILE\.ssh; Add-Content -Fo
 	* Escalation method as `runas`
 	* Priv. Escallation User: `Administrator`
 	* Priv. Escallation Pw: `(Administrator's password)`
+	
+	
+	
+## TO DO
+
+- Migrate vSAN iSCSI from ABX to vRO and pull into this project
+- Make iSCSI optional and include an option for a network share
+- Automate the Customization spec creation in vRO
+- Capture inputs in the blueprint for the SQL scripts
+- Create first 'release'
 
 
 	
